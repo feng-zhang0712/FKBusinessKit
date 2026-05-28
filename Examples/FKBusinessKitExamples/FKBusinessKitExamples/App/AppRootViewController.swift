@@ -1,0 +1,42 @@
+//
+//  AppRootViewController.swift
+//  FKBusinessKitExamples
+//
+
+import UIKit
+
+/// App root navigation controller for demo pages under `Examples/`.
+final class AppRootViewController: UINavigationController {
+  init() {
+    super.init(rootViewController: FKBusinessKitExampleViewController())
+    navigationBar.prefersLargeTitles = false
+    applySystemNavigationBarAppearance()
+  }
+
+  override var childForStatusBarStyle: UIViewController? {
+    topViewController
+  }
+
+  override var childForStatusBarHidden: UIViewController? {
+    topViewController
+  }
+
+  private func applySystemNavigationBarAppearance() {
+    let appearance = UINavigationBarAppearance()
+    appearance.configureWithOpaqueBackground()
+    appearance.backgroundColor = .systemBackground
+    appearance.titleTextAttributes = [.foregroundColor: UIColor.label]
+    appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+
+    navigationBar.standardAppearance = appearance
+    navigationBar.scrollEdgeAppearance = appearance
+    navigationBar.compactAppearance = appearance
+    navigationBar.compactScrollEdgeAppearance = appearance
+    navigationBar.isTranslucent = false
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+}

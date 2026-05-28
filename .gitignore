@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Swift Package Manager / Xcode local package workspace (do not commit)
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode (when opening a Package in-repo or adding an Example project)
+DerivedData/
+*.xcuserstate
+**/xcuserdata/
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# CocoaPods / Carthage (if used later)
+Pods/
+Carthage/Build/
+
+# Cursor / Claude local editor and agent config (do not commit)
+.cursor/
+.claude/
+
+# Other
+.netrc
