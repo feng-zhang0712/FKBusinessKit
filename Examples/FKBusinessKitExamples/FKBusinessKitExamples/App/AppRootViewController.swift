@@ -8,7 +8,7 @@ import UIKit
 /// App root navigation controller for demo pages under `Examples/`.
 final class AppRootViewController: UINavigationController {
   init() {
-    super.init(rootViewController: FKBusinessKitExampleViewController())
+    super.init(rootViewController: ExampleMenuViewController())
     navigationBar.prefersLargeTitles = false
     applySystemNavigationBarAppearance()
   }

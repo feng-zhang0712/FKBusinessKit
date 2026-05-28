@@ -1,11 +1,10 @@
 Pod::Spec.new do |s|
   s.name = 'FKBusinessKit'
   s.version = '0.1.0'
-  s.summary = 'FKBusinessKit: app infrastructure for version checks, analytics, i18n, lifecycle, deeplinks, and business utilities.'
+  s.summary = 'FKBusinessKit: iOS business components (TabBarFilter) built on FKKit.'
   s.description = <<-DESC
-    Pure native Swift business capability module for iOS apps. Provides a single entry point
-    (FKBusinessKit.shared) for version management, event tracking, in-app localization,
-    lifecycle observation, deeplink routing, and common business formatting utilities.
+    iOS Swift package for business-oriented UI components such as TabBarFilter,
+    depending on FKCoreKit and FKUIKit from the FKKit family.
   DESC
   s.homepage = 'https://github.com/feng-zhang0712/FKBusinessKit'
   s.license = { :type => 'MIT', :file => 'LICENSE' }
@@ -16,4 +15,6 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.source_files = 'Sources/FKBusinessKit/**/*.swift'
+  s.dependency 'FKCoreKit', '~> 0.54.0'
+  s.dependency 'FKUIKit', '~> 0.54.0'
 end

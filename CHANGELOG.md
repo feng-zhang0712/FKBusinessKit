@@ -4,6 +4,19 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+### Added
+
+- **FKCoreKit** dependency via [FKKit](https://github.com/feng-zhang0712/FKKit) (`0.54.0+`) in `Package.swift` and `FKBusinessKit.podspec`.
+
+### Removed **Breaking**
+
+- Removed duplicated BusinessKit implementation from this package (`Core/`, `Version/`, `Track/`, `I18n/`, `Lifecycle/`, `Deeplink/`, `Utils/`, `Model/`).
+- **`FKBusinessKit.shared`** and related APIs are no longer provided here — use **`FKCoreKit`** / `Sources/FKCoreKit/BusinessKit` in [FKKit](https://github.com/feng-zhang0712/FKKit) instead.
+
+### Changed
+
+- Package is now a thin **FKKit-dependent** module shell (`FKBusinessKitModule`) for future business/composite components.
+
 ## [0.1.0] - 2026-05-29
 
 ### Added

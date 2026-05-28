@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   ios-spm:
-    name: Build & test (iOS Simulator / SPM)
+    name: Build (iOS Simulator / SPM)
     runs-on: macos-latest
     steps:
       - name: Checkout
@@ -38,7 +38,7 @@ jobs:
           xcode-version: latest-stable
 
       # SWIFT_STRICT_CONCURRENCY=complete matches long-term Swift 6 checking; catches issues CI would miss at minimal/targeted.
-      - name: Build and test FKBusinessKit (iOS Simulator)
+      - name: Build FKBusinessKit (iOS Simulator)
         run: |
           set -eo pipefail
           UDID="$(python3 "${GITHUB_WORKSPACE}/.github/scripts/pick_iphone_simulator_udid.py")"
@@ -49,4 +49,4 @@ jobs:
             -derivedDataPath "${RUNNER_TEMP}/DerivedData-FKBusinessKit" \
             CODE_SIGNING_ALLOWED=NO \
             SWIFT_STRICT_CONCURRENCY=complete \
-            test
+            build

@@ -10,24 +10,26 @@ let package = Package(
   products: [
     .library(name: "FKBusinessKit", targets: ["FKBusinessKit"]),
   ],
+  dependencies: [
+    // TabBarFilter needs FKUIKit SheetPresentation — raise minimum after the next FKKit release (e.g. `from: "0.55.0"`).
+    .package(url: "https://github.com/feng-zhang0712/FKKit.git", from: "0.54.0"),
+  ],
   targets: [
     .target(
       name: "FKBusinessKit",
+      dependencies: [
+        .product(name: "FKCoreKit", package: "FKKit"),
+        .product(name: "FKUIKit", package: "FKKit"),
+      ],
       path: "Sources/FKBusinessKit",
       exclude: [
         "README.md",
+        "Components/TabBarFilter/README.md",
       ]
-    ),
-    .testTarget(
-      name: "FKBusinessKitTests",
-      dependencies: ["FKBusinessKit"],
-      path: "Tests/FKBusinessKitTests"
     ),
   ],
   /// Swift 6 language mode for all targets (region isolation; aligns with strict concurrency work).
   ///
-  /// Default MainActor isolation is **not** enabled at the package level: ``FKBusinessKit`` mixes background-safe
-  /// analytics and lifecycle code with UI helpers; forcing module-wide ``MainActor`` would fight that split.
-  /// UI-heavy APIs rely on UIKit’s own isolation plus explicit annotations instead (see CI strict concurrency).
+  /// Default MainActor isolation is **not** enabled at the package level (see CI `SWIFT_STRICT_CONCURRENCY=complete`).
   swiftLanguageModes: [.v6]
 )

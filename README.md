@@ -23,19 +23,18 @@
 - [Changelog](#changelog)
 
 ## Overview
-FKBusinessKit is a pure native Swift business capability library for iOS applications.  
-It provides a **single entry point** (`FKBusinessKit.shared`) for high-frequency app features commonly needed in medium and large iOS projects.
+FKBusinessKit is an **iOS** Swift package for business-oriented and composite components, built on **[FKKit](https://github.com/feng-zhang0712/FKKit)** (`FKCoreKit`).
 
-The library is built on top of Apple system frameworks and distributed via **Swift Package Manager (SPM)** and **CocoaPods**, with no third-party runtime dependencies.
+It is distributed via **Swift Package Manager (SPM)** and **CocoaPods**. Use it alongside FKKit when you want business-layer or app-specific widgets in a dedicated package, separate from the core FKKit modules.
+
+> **Note:** Legacy business infrastructure APIs (version, track, i18n, lifecycle, deeplink, utils) previously sketched here now live under **FKKit → `FKCoreKit/BusinessKit`**. This repository is the home for **new** FKBusinessKit components going forward.
 
 ## Features
 - Pure Swift implementation (Swift 6 language mode in package settings).
-- No third-party dependencies (Foundation/UIKit only).
-- Swift Package Manager and CocoaPods integration.
-- Continuous integration via **GitHub Actions**: builds and runs **unit tests** on **iOS Simulator** (see `.github/workflows/ci.yml`).
-- Protocol-oriented design with pluggable implementations for testability.
-- Thread-safe, non-blocking APIs (async/await + closure dual styles).
-- Example app under [`Examples/FKBusinessKitExamples`](Examples/FKBusinessKitExamples) for direct integration reference.
+- **iOS-only** — `platforms: [.iOS(.v15)]` in `Package.swift`.
+- Depends on **FKCoreKit** (FKKit `0.54.0+`) via SPM / CocoaPods.
+- GitHub Actions CI: builds on **iOS Simulator**.
+- Example app under [`Examples/FKBusinessKitExamples`](Examples/FKBusinessKitExamples).
 
 ## Module Structure
 
@@ -43,148 +42,106 @@ The library is built on top of Apple system frameworks and distributed via **Swi
 FKBusinessKit/
 ├─ Package.swift
 ├─ FKBusinessKit.podspec
-├─ Tests/
-│  └─ FKBusinessKitTests/
+├─ scripts/
 ├─ Sources/
 │  └─ FKBusinessKit/
-│     ├─ Core/
-│     ├─ Version/
-│     ├─ Track/
-│     ├─ I18n/
-│     ├─ Lifecycle/
-│     ├─ Deeplink/
-│     ├─ Utils/
-│     ├─ Model/
+│     ├─ FKBusinessKit.swift    # Module marker (extend with new components here)
 │     └─ README.md
 └─ Examples/
    └─ FKBusinessKitExamples/
 ```
 
-### Core Business Capabilities
-
-| Area | Description |
-|------|-------------|
-| **Version** | Local/remote version comparison, optional/forced update prompts, App Store lookup provider |
-| **Track** | Page view / click / custom event APIs, file-backed buffering, batch upload, retry |
-| **I18n** | In-app language switching independent of system language |
-| **Lifecycle** | Centralized `UIApplication` lifecycle state stream |
-| **Deeplink** | URL parsing, pattern matching, pluggable route handlers |
-| **Utils** | Time/number formatting, sensitive-string masking, alert de-duplication, startup tasks |
-| **Info** | Device and app metadata (bundle ID, version, screen, channel) |
-
-For complete API documentation, see [`Sources/FKBusinessKit/README.md`](Sources/FKBusinessKit/README.md).
-
 ## Requirements
-- **iOS 15.0+** (declared in `Package.swift`)
-- Swift toolchain **6.0+** / **Xcode 16.2+** (`swift-tools-version` in `Package.swift` is **6.0**)
+- **iOS 15.0+**
+- Swift **6.0+** / **Xcode 16.2+**
+- **[FKKit](https://github.com/feng-zhang0712/FKKit)** `0.54.0+` — **`FKCoreKit`** (transitive via this package)
 
 ## Installation (SPM)
 
 ### Xcode
-1. Open `File` -> `Add Package Dependencies...`
-2. Enter repository URL:
-   - `https://github.com/feng-zhang0712/FKBusinessKit.git`
-3. Select product:
-   - `FKBusinessKit`
+1. Add **FKKit**: `https://github.com/feng-zhang0712/FKKit.git` (from `0.54.0`)
+2. Add **FKBusinessKit**: `https://github.com/feng-zhang0712/FKBusinessKit.git` (from `0.1.0`)
+3. Link **`FKBusinessKit`** to your app target (FKCoreKit is resolved transitively).
 
 ### Package.swift
 ```swift
 dependencies: [
-  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.1.0")
+  .package(url: "https://github.com/feng-zhang0712/FKKit.git", from: "0.54.0"),
+  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.1.0"),
 ],
 targets: [
   .target(
     name: "YourTarget",
     dependencies: [
-      .product(name: "FKBusinessKit", package: "FKBusinessKit")
+      .product(name: "FKBusinessKit", package: "FKBusinessKit"),
+      // Optional UI from FKKit:
+      // .product(name: "FKUIKit", package: "FKKit"),
     ]
   )
 ]
 ```
 
+### Local path (side-by-side clones)
+```swift
+dependencies: [
+  .package(path: "../FKKit"),
+  .package(path: "../FKBusinessKit"),
+],
+```
+
 ## Installation (CocoaPods)
-
-The repository ships a podspec aligned with the SPM product. The podspec **`s.version`** must match a **published Git tag** (for example `0.1.0`).
-
-**Maintainers:** version bump script (`scripts/bump-version.sh`), drift check (`scripts/verify-podspec-versions.sh`, also run in CI), and full release checklist — **`docs/RELEASING.md`**.
-
-### Podfile (Git tag)
 
 ```ruby
 platform :ios, '15.0'
 
+pod 'FKCoreKit',     :git => 'https://github.com/feng-zhang0712/FKKit.git', :tag => '0.54.0'
 pod 'FKBusinessKit', :git => 'https://github.com/feng-zhang0712/FKBusinessKit.git', :tag => '0.1.0'
 ```
 
-### Podfile (local path, for development)
+Local development:
 
 ```ruby
-platform :ios, '15.0'
-
+pod 'FKCoreKit',     :path => '../FKKit'
 pod 'FKBusinessKit', :path => '../FKBusinessKit'
-```
-
-### Linting podspecs (maintainers)
-
-```text
-pod spec lint FKBusinessKit.podspec --allow-warnings
 ```
 
 ## Usage
 
 ```swift
 import FKBusinessKit
+import FKCoreKit
 
-FKBusinessKit.shared.updateConfiguration { config in
-  config.channel = "AppStore"
-  config.defaultLanguageCode = "en"
-}
-
-FKBusinessKit.shared.track.trackPageView("Home", parameters: ["source": "tab"])
-FKBusinessKit.shared.track.trackClick("BuyButton", page: "Product", parameters: ["sku": "123"])
+// Use FKCoreKit / FKUIKit APIs from FKKit in your app or in new FKBusinessKit components.
+let version = FKUtilsDevice.systemVersion()
 ```
 
-For advanced usage (version checks, deeplink routing, i18n, lifecycle observation), refer to [`Sources/FKBusinessKit/README.md`](Sources/FKBusinessKit/README.md).
+For legacy **BusinessKit** capabilities (`FKBusinessKit.shared`, version, track, i18n, etc.), use **`FKCoreKit`** from the [FKKit](https://github.com/feng-zhang0712/FKKit) repository — see `Sources/FKCoreKit/BusinessKit/README.md` there.
+
+Module notes: [`Sources/FKBusinessKit/README.md`](Sources/FKBusinessKit/README.md).
 
 ## Contributing
 
-Pull requests are welcome. Open PRs against **`develop`**, keep changes focused, and ensure tests pass (locally with Xcode / `xcodebuild`, or via CI). Branch naming, git hooks, commit message conventions, and release flow: [Branching & Collaboration (Recommended)](#branching--collaboration-recommended).
+Pull requests welcome against **`develop`**. Ensure the package builds on iOS Simulator before opening a PR.
 
 ## Support
 
-File bug reports and feature requests in [GitHub Issues](https://github.com/feng-zhang0712/FKBusinessKit/issues).
+[GitHub Issues](https://github.com/feng-zhang0712/FKBusinessKit/issues)
 
 ## Security
 
-Please report security vulnerabilities through [GitHub private security advisories](https://github.com/feng-zhang0712/FKBusinessKit/security/advisories/new) instead of public issues.
+[Private security advisories](https://github.com/feng-zhang0712/FKBusinessKit/security/advisories/new)
 
 ## Branching & Collaboration (Recommended)
 
-- **Optional Git hooks:** after cloning, run `./scripts/install-git-hooks.sh` so **`git push`** runs **`scripts/verify-podspec-versions.sh`** first (podspec version alignment). See **`docs/GIT_HOOKS.md`**.
-- Use `develop` as the integration branch.
-- Create feature branches from `develop` (for example: `feature/version-provider`).
-- Keep commits focused and use clear conventional-style messages.
-- Follow this commit format:
-  - `<type>(<scope>): <subject>`
-  - Example: `feat(track): add custom event batch size override`
-- Recommended commit types:
-  - `feat`: new feature
-  - `fix`: bug fix
-  - `refactor`: internal refactor without behavior change
-  - `perf`: performance improvement
-  - `docs`: documentation updates
-  - `test`: tests added or updated
-  - `build`: build/dependency/tooling changes
-  - `chore`: maintenance tasks
-- Open pull requests into `develop` with:
-  - change summary
-  - test/verification notes
-  - migration notes when APIs change
-- Tag stable releases with semantic versions (for example: `0.1.0`), then merge release work back into `develop`.
+- Optional hooks: `./scripts/install-git-hooks.sh`
+- Integration branch: **`develop`**
+- Conventional commits: `feat:`, `fix:`, `docs:`, etc.
+- PRs target **`develop`** with build verification notes
 
 ## License
-This repository is licensed under the MIT License.  
-See [`LICENSE`](LICENSE) for details.
+
+MIT — see [`LICENSE`](LICENSE).
 
 ## Changelog
-Release history and migration details are maintained in [`CHANGELOG.md`](CHANGELOG.md).
+
+See [`CHANGELOG.md`](CHANGELOG.md).
