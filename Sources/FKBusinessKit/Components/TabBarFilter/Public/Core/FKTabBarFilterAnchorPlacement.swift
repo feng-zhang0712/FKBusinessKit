@@ -35,6 +35,9 @@ public final class FKTabBarFilterAnchorPlacement {
   /// Offset along the attachment axis between the anchor edge and the panel.
   public var attachmentOffset: CGFloat
 
+  /// Optional override for ``FKAnchorConfiguration/hostStrategy`` (defaults to ``HostStrategy/inProvidedContainer(_:)`` with ``overlayHostView``).
+  public var hostStrategy: FKAnchorConfiguration.HostStrategy?
+
   public init(
     sourceView: UIView? = nil,
     overlayHostView: UIView? = nil,
@@ -42,7 +45,8 @@ public final class FKTabBarFilterAnchorPlacement {
     expansionDirection: FKAnchor.Direction = .down,
     horizontalAlignment: FKAnchor.Alignment = .fill,
     widthPolicy: FKAnchor.WidthPolicy = .matchContainer,
-    attachmentOffset: CGFloat = 0
+    attachmentOffset: CGFloat = 0,
+    hostStrategy: FKAnchorConfiguration.HostStrategy? = nil
   ) {
     self.sourceView = sourceView
     self.overlayHostView = overlayHostView
@@ -51,5 +55,6 @@ public final class FKTabBarFilterAnchorPlacement {
     self.horizontalAlignment = horizontalAlignment
     self.widthPolicy = widthPolicy
     self.attachmentOffset = attachmentOffset
+    self.hostStrategy = hostStrategy
   }
 }

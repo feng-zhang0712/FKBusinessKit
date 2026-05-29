@@ -25,8 +25,9 @@ final class FKTabBarFilterTopHairlineWrapperViewController: UIViewController {
   override var preferredContentSize: CGSize {
     get {
       let inner = contentVC.preferredContentSize
-      guard inner.height > 0 else { return .zero }
-      return CGSize(width: inner.width, height: inner.height + currentHairlineHeight())
+      let hairlineH = currentHairlineHeight()
+      let contentH = inner.height > 0 ? inner.height : Self.fallbackContentHeight
+      return CGSize(width: inner.width, height: contentH + hairlineH)
     }
     set { super.preferredContentSize = newValue }
   }
@@ -35,8 +36,9 @@ final class FKTabBarFilterTopHairlineWrapperViewController: UIViewController {
     super.preferredContentSizeDidChange(forChildContentContainer: container)
     guard container === contentVC else { return }
     let inner = contentVC.preferredContentSize
-    guard inner.height > 0 else { return }
-    super.preferredContentSize = CGSize(width: inner.width, height: inner.height + currentHairlineHeight())
+    let hairlineH = currentHairlineHeight()
+    let contentH = inner.height > 0 ? inner.height : Self.fallbackContentHeight
+    super.preferredContentSize = CGSize(width: inner.width, height: contentH + hairlineH)
   }
 
   override func viewDidLoad() {
@@ -53,6 +55,10 @@ final class FKTabBarFilterTopHairlineWrapperViewController: UIViewController {
     contentVC.didMove(toParent: self)
 
     hairlineHeightConstraint = hairline.heightAnchor.constraint(equalToConstant: currentHairlineHeight())
+    hairlineHeightConstraint?.priority = .defaultHigh
+
+    let contentBottom = contentVC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+    contentBottom.priority = .defaultHigh
 
     NSLayoutConstraint.activate([
       hairline.topAnchor.constraint(equalTo: view.topAnchor),
@@ -62,7 +68,7 @@ final class FKTabBarFilterTopHairlineWrapperViewController: UIViewController {
       contentVC.view.topAnchor.constraint(equalTo: hairline.bottomAnchor),
       contentVC.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       contentVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-      contentVC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+      contentBottom,
     ].compactMap { $0 })
   }
 
@@ -75,5 +81,7 @@ final class FKTabBarFilterTopHairlineWrapperViewController: UIViewController {
     let scale = view.window?.windowScene?.screen.scale ?? traitCollection.displayScale
     return 1 / max(scale, 1)
   }
+
+  private static let fallbackContentHeight: CGFloat = 44
 }
 

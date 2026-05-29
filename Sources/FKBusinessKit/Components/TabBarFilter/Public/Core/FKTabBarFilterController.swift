@@ -116,18 +116,13 @@ public final class FKTabBarFilterController<TabID: Hashable>: UIViewController {
   }
 
   /// Updates dropdown configuration and strip defaults without changing the tab list.
+  ///
+  /// Tab strip typography or panel wiring changes require ``replaceTabs(_:)`` so dropdown tabs are rebuilt.
   public func setFilterConfiguration(_ configuration: FKTabBarFilterConfiguration<TabID>) {
     filterConfiguration = configuration
     dropdownController.configuration = configuration.dropdownConfiguration
     dropdownController.events = configuration.dropdownEvents
-    dropdownController.updateTabs(
-      Self.makeAnchoredTabs(
-        tabs: filterTabs,
-        panelFactory: panelFactory,
-        runtime: runtime,
-        defaultTabStrip: configuration.defaultTabStrip
-      )
-    )
+    dropdownController.reloadTabBarItems()
   }
 
   public func removeTitleOverride(for tabID: TabID) {
@@ -140,8 +135,12 @@ public final class FKTabBarFilterController<TabID: Hashable>: UIViewController {
     dropdownController.reloadTabBarItems()
   }
 
-  public func invalidateCachedPanelContent(for tab: TabID) {
+  public func invalidateCachedContent(for tab: TabID) {
     dropdownController.invalidateCachedContent(for: tab)
+  }
+
+  public func invalidateAllCachedContent() {
+    dropdownController.invalidateAllCachedContent()
   }
 
   /// Pins mask and panel layout to `hostView` while the tab bar remains the anchor source.
@@ -188,7 +187,7 @@ public final class FKTabBarFilterController<TabID: Hashable>: UIViewController {
               runtime.onSelection?(context)
               runtime.dismissIfSingleSelect(mode: selection.effectiveSelectionMode)
             }
-          ) ?? UIViewController()
+          ) ?? panelFactory.makeFallbackPanel()
         }
       )
     }

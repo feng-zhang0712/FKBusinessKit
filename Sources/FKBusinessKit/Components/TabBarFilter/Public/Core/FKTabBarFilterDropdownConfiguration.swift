@@ -3,43 +3,10 @@ import FKUIKit
 
 /// Configuration for ``FKTabBarFilterDropdownController``.
 public struct FKTabBarFilterDropdownConfiguration {
-  /// How the component switches tabs while a panel stays presented.
-  public enum SwitchAnimationStyle: Equatable, Sendable {
-    /// Dismiss, then present again (uses full ``FKSheetPresentationController`` transitions).
-    case dismissThenPresent(dismissAnimated: Bool, presentAnimated: Bool)
-
-    /// Replace only the content; backdrop and shell stay visible.
-    case replaceInPlace(animation: ReplaceInPlaceAnimation)
-  }
-
-  /// Animation for ``SwitchAnimationStyle/replaceInPlace(animation:)``.
-  public enum ReplaceInPlaceAnimation: Equatable, Sendable {
-    case crossfade(duration: TimeInterval)
-    case slideVertical(direction: SlideDirection, duration: TimeInterval)
-
-    public enum SlideDirection: Equatable, Sendable {
-      case up
-      case down
-    }
-  }
-
   /// Policy for retaining built ``UIViewController`` instances per tab.
   public enum ContentCachingPolicy: Equatable, Sendable {
     case recreate
     case cachePerTab
-  }
-
-  /// Durations used when the presented shell asks ``FKSheetPresentationController`` to relayout after
-  /// content height changes (``preferredContentSize`` / in-place tab switch completion).
-  ///
-  /// This is separate from ``SwitchAnimationStyle`` crossfade/slide durations, which only affect
-  /// the inner content container, not the anchor-attached frame.
-  public struct PresentationLayoutAnimation: Equatable, Sendable {
-    public var duration: TimeInterval
-
-    public init(duration: TimeInterval = 0.24) {
-      self.duration = duration
-    }
   }
 
   /// Lifecycle hooks (optional). Prefer this over subclassing.
@@ -77,26 +44,23 @@ public struct FKTabBarFilterDropdownConfiguration {
   public var tabBarConfiguration: FKTabBarConfiguration
   /// Dismiss behavior, backdrop, keyboard, and other presentation options. Layout is always anchor; the host overwrites `layout` when presenting.
   public var presentationConfiguration: FKSheetPresentationConfiguration
-  public var switchAnimationStyle: SwitchAnimationStyle
+  /// How anchor-hosted panel content is replaced when switching tabs while expanded (see ``FKSheetPresentationAnchorReplacementPolicy``).
+  public var anchorReplacementPolicy: FKSheetPresentationAnchorReplacementPolicy
   public var contentCachingPolicy: ContentCachingPolicy
-  /// Anchor presentation relayout animation after content size / tab content changes.
-  public var presentationLayoutAnimation: PresentationLayoutAnimation
   /// Optional custom anchor; when `nil`, the tab bar is the source and the tab bar host view is the overlay container.
   public var anchorPlacement: FKTabBarFilterAnchorPlacement?
 
   public init(
     tabBarConfiguration: FKTabBarConfiguration,
     presentationConfiguration: FKSheetPresentationConfiguration,
-    switchAnimationStyle: SwitchAnimationStyle = .replaceInPlace(animation: .crossfade(duration: 0.18)),
+    anchorReplacementPolicy: FKSheetPresentationAnchorReplacementPolicy = .replaceInPlace(),
     contentCachingPolicy: ContentCachingPolicy = .cachePerTab,
-    presentationLayoutAnimation: PresentationLayoutAnimation = PresentationLayoutAnimation(),
     anchorPlacement: FKTabBarFilterAnchorPlacement? = nil
   ) {
     self.tabBarConfiguration = tabBarConfiguration
     self.presentationConfiguration = presentationConfiguration
-    self.switchAnimationStyle = switchAnimationStyle
+    self.anchorReplacementPolicy = anchorReplacementPolicy
     self.contentCachingPolicy = contentCachingPolicy
-    self.presentationLayoutAnimation = presentationLayoutAnimation
     self.anchorPlacement = anchorPlacement
   }
 
@@ -107,9 +71,8 @@ public struct FKTabBarFilterDropdownConfiguration {
     self.init(
       tabBarConfiguration: defaults.tabBarConfiguration,
       presentationConfiguration: defaults.presentationConfiguration,
-      switchAnimationStyle: defaults.switchAnimationStyle,
+      anchorReplacementPolicy: defaults.anchorReplacementPolicy,
       contentCachingPolicy: defaults.contentCachingPolicy,
-      presentationLayoutAnimation: defaults.presentationLayoutAnimation,
       anchorPlacement: defaults.anchorPlacement
     )
   }

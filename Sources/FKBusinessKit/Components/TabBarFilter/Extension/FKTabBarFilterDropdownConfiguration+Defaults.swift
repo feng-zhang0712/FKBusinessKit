@@ -26,7 +26,7 @@ public extension FKTabBarFilterDropdownConfiguration {
     return FKTabBarFilterDropdownConfiguration(
       tabBarConfiguration: tab,
       presentationConfiguration: presentation,
-      switchAnimationStyle: .replaceInPlace(animation: .crossfade(duration: 0.18))
+      anchorReplacementPolicy: .replaceInPlace(contentTransition: .crossfade(duration: 0.18))
     )
   }
 

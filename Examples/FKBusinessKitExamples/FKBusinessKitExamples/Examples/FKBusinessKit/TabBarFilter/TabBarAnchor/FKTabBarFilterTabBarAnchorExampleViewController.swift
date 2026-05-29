@@ -61,11 +61,11 @@ final class FKTabBarFilterTabBarAnchorExampleViewController: UIViewController {
   @objc private func didChangeAnimationStyle() {
     switch animationControl.selectedSegmentIndex {
     case 0:
-      dropdown.configuration.switchAnimationStyle = .replaceInPlace(animation: .crossfade(duration: 0.18))
-      appendLog("switchAnimationStyle = replaceInPlace(crossfade)")
+      dropdown.configuration.anchorReplacementPolicy = .replaceInPlace(contentTransition: .crossfade(duration: 0.18))
+      appendLog("anchorReplacementPolicy = replaceInPlace(crossfade)")
     default:
-      dropdown.configuration.switchAnimationStyle = .dismissThenPresent(dismissAnimated: false, presentAnimated: true)
-      appendLog("switchAnimationStyle = dismissThenPresent")
+      dropdown.configuration.anchorReplacementPolicy = .dismissThenPresent(dismissAnimated: false, presentAnimated: true)
+      appendLog("anchorReplacementPolicy = dismissThenPresent")
     }
   }
 }

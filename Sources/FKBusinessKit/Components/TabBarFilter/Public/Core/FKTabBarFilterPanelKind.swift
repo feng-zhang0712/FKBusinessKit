@@ -3,7 +3,16 @@ import FKUIKit
 
 /// Identifies which panel recipe in ``FKTabBarFilterPanelFactory`` serves a tab.
 ///
-/// Built-in cases match previous string identifiers for analytics / ``RawRepresentable``.
+/// Built-in cases map to ``FKTabBarFilterPanelFactory/PanelSource`` recipes:
+///
+/// | Kind | Panel source |
+/// |------|----------------|
+/// | ``hierarchy`` | ``PanelSource/twoColumnList`` |
+/// | ``dualHierarchy`` | ``PanelSource/twoColumnGrid`` |
+/// | ``gridPrimary`` / ``gridSecondary`` / ``tags`` | ``PanelSource/chips`` |
+/// | ``singleList`` | ``PanelSource/singleList`` |
+/// | ``custom(_:)`` | ``PanelSource/custom(make:)`` |
+///
 /// Use ``custom(_:)`` for app-specific kinds and register a matching ``FKTabBarFilterPanelFactory/PanelSource``.
 public enum FKTabBarFilterPanelKind: Hashable, Sendable {
   case hierarchy
@@ -18,7 +27,7 @@ public enum FKTabBarFilterPanelKind: Hashable, Sendable {
 extension FKTabBarFilterPanelKind: RawRepresentable {
   public typealias RawValue = String
 
-  public init?(rawValue: String) {
+  public init(rawValue: String) {
     switch rawValue {
     case "hierarchy": self = .hierarchy
     case "dualHierarchy": self = .dualHierarchy

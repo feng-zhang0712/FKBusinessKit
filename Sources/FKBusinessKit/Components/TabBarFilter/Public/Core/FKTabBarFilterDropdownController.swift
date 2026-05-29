@@ -25,8 +25,10 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
 
   public private(set) var state: State = .collapsed
 
+  /// Tab index last selected on the strip (may differ from ``expandedTabID`` when collapsed).
   public var selectedTabID: TabID? { selectedTabInternal }
 
+  /// Tab whose panel is currently presented, if any.
   public var expandedTabID: TabID? { expandedTabInternal }
 
   /// `true` while a tab’s panel is presented (from first expand through until fully dismissed).
@@ -98,6 +100,7 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
     }
   }
 
+  /// Updates strip selection without expanding a panel.
   public func selectTab(_ id: TabID, animated: Bool = false) {
     guard let idx = tabs.firstIndex(where: { $0.id == id }) else { return }
     selectedTabInternal = id
@@ -134,6 +137,9 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
     configuration.anchorPlacement?.overlayHostView = overlayHost
   }
 
+  /// Updates anchor geometry on the existing ``FKTabBarFilterAnchorPlacement`` instance.
+  ///
+  /// No-op until ``setAnchor(source:overlayHost:)`` or ``FKTabBarFilterDropdownConfiguration/anchorPlacement`` is set.
   public func updateAnchorPlacement(
     attachmentEdge: FKAnchor.Edge? = nil,
     expansionDirection: FKAnchor.Direction? = nil,
@@ -214,8 +220,6 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
   private var lastCollapsingTabID: TabID?
   private var pendingSwitchTargetTabID: TabID?
   private var pendingSwitchAnimated: Bool = true
-  /// Set during ``transitionToSwitch`` replace-in-place so ``reconcileIfPossible`` does not interleave.
-  private var isSwitchingContentInPlace: Bool = false
 
   private struct DesiredExpandedRequest: Equatable {
     var tab: TabID?
@@ -275,12 +279,14 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
 
   private func applyConfiguration() {
     tabBar.configuration = configuration.tabBarConfiguration
+    if let container = presentedContentContainer {
+      wirePreferredContentSizeLayoutUpdates(to: container)
+    }
   }
 
   private func rebuildTabBarItems(keepSelectedTab: TabID?, forceCollapsedChrome: Bool = false) {
     let snapshot = FKTabBarFilterDropdownTab<TabID>.StateSnapshot(
-      expandedTab: forceCollapsedChrome ? nil : expandedTabInternal,
-      selectedTab: keepSelectedTab
+      expandedTab: forceCollapsedChrome ? nil : expandedTabInternal
     )
     let items = tabs.map { $0.makeTabBarItem(snapshot) }
     tabBar.reload(items: items, updatePolicy: .preserveSelection)
@@ -298,7 +304,8 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
   private func reconcileIfPossible() {
     guard isReconciling == false else { return }
     guard let desiredExpanded else { return }
-    guard isSwitchingContentInPlace == false else { return }
+    if presentedContentContainer?.isTransitioningContent == true { return }
+    if synchronizeDismissedPresentationIfNeeded() { return }
     guard let presented = fkSheetPresentationController else {
       if let target = desiredExpanded.tab {
         let started = transitionToExpand(tab: target, animated: desiredExpanded.animated)
@@ -345,25 +352,23 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
     expandedTabInternal = id
     rebuildTabBarItems(keepSelectedTab: selectedTabInternal ?? id)
 
-      let container = FKSheetPresentationAnchorContentHostViewController()
-    container.onPreferredContentSizeDidChange = { [weak self] in
-      guard let self else { return }
-      let shouldAnimate = self.configuration.switchAnimationStyle.isReplaceInPlace
-      let layoutDuration = self.configuration.presentationLayoutAnimation.duration
-      self.fkSheetPresentationController?.updateLayout(
-        animated: shouldAnimate,
-        duration: shouldAnimate ? layoutDuration : 0,
-        options: .curveEaseInOut
-      )
-    }
-    let contentVC = resolveContentController(for: tab)
-    container.setContent(contentVC, transition: .none, completion: nil)
-    presentedContentContainer = container
+    let container = FKSheetPresentationAnchorContentHostViewController()
+    wirePreferredContentSizeLayoutUpdates(to: container)
 
     var cfg = configuration.presentationConfiguration
     cfg.layout = .anchor(makePresentationAnchorConfiguration())
 
-    let controller = FKSheetPresentationController(contentController: container, configuration: cfg, delegate: self)
+    let contentVC = resolveContentController(for: tab)
+    container.setContent(contentVC, transition: .none, completion: nil)
+    reapplyAnchorShellPreferredContentSize(on: container)
+    presentedContentContainer = container
+
+    let controller = FKSheetPresentationController(
+      contentController: container,
+      configuration: cfg,
+      delegate: self,
+      callbackDelivery: .delegateOnly
+    )
     fkSheetPresentationController = controller
     controller.present(from: self, animated: animated, completion: nil)
     return true
@@ -393,10 +398,14 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
   }
 
   private func refreshPresentedContentIfNeeded(forExpandedTab tab: TabID) {
-    guard expandedTabInternal == tab, let container = presentedContentContainer,
+    guard expandedTabInternal == tab,
           let tabModel = tabs.first(where: { $0.id == tab }) else { return }
     let next = resolveContentController(for: tabModel)
-    container.setContent(next, transition: .none, completion: nil)
+    if let controller = fkSheetPresentationController, controller.isPresented {
+      controller.replaceAnchorContent(next, transition: .none, animateLayout: false, completion: nil)
+    } else if let container = presentedContentContainer {
+      container.setContent(next, transition: .none, completion: nil)
+    }
   }
 
   private func transitionToCollapse(reason: DismissReason, animated: Bool) {
@@ -423,7 +432,7 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
     events.onWillSwitchTab?(from, to)
     setState(.switching(from: from, to: to))
 
-    let style = configuration.switchAnimationStyle
+    let style = configuration.anchorReplacementPolicy
     switch style {
     case let .dismissThenPresent(dismissAnimated, presentAnimated):
       events.onWillCollapse?(from, .switchingTab)
@@ -433,32 +442,20 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
       pendingSwitchAnimated = presentAnimated
       controller.dismiss(animated: dismissAnimated, completion: nil)
 
-    case let .replaceInPlace(animation):
-      guard let container = presentedContentContainer else {
-        events.onWillCollapse?(from, .switchingTab)
-        lastCollapsingTabID = from
-        scheduledDismissReason = .switchingTab
-        pendingSwitchTargetTabID = to
-        pendingSwitchAnimated = true
-        controller.dismiss(animated: false, completion: nil)
-        return
-      }
+    case let .replaceInPlace(contentTransition, animateLayout, layoutDuration):
       guard let tab = tabs.first(where: { $0.id == to }) else { return }
       let nextContent = resolveContentController(for: tab)
 
       expandedTabInternal = to
       rebuildTabBarItems(keepSelectedTab: selectedTabInternal ?? to)
 
-      isSwitchingContentInPlace = true
-      let layoutDuration = configuration.presentationLayoutAnimation.duration
-      container.setContent(nextContent, transition: containerTransition(for: animation)) { [weak self] in
+      controller.replaceAnchorContent(
+        nextContent,
+        transition: contentTransition,
+        animateLayout: animateLayout,
+        layoutAnimationDuration: layoutDuration
+      ) { [weak self] in
         guard let self else { return }
-        self.fkSheetPresentationController?.updateLayout(
-          animated: true,
-          duration: layoutDuration,
-          options: .curveEaseInOut
-        )
-        self.isSwitchingContentInPlace = false
         if self.expandedTabInternal == to {
           self.events.onDidSwitchTab?(from, to)
           self.setState(.expanded(tab: to))
@@ -468,23 +465,63 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
     }
   }
 
+  private func wirePreferredContentSizeLayoutUpdates(to container: FKSheetPresentationAnchorContentHostViewController) {
+    let layoutUpdate = configuration.anchorReplacementPolicy.preferredContentSizeLayoutUpdate
+    container.onPreferredContentSizeDidChange = { [weak self] in
+      guard let self else { return }
+      self.reapplyAnchorShellPreferredContentSize(on: container)
+      self.fkSheetPresentationController?.updateLayout(
+        animated: layoutUpdate.animated,
+        duration: layoutUpdate.animated ? layoutUpdate.duration : 0,
+        options: .curveEaseInOut
+      )
+    }
+  }
+
+  /// ``FKAnchorHostViewController`` subtracts ``FKSheetPresentationConfiguration/contentInsets`` from the content
+  /// container without growing the shell; inflate the reported height so panel content is not clipped.
+  private func reapplyAnchorShellPreferredContentSize(on container: FKSheetPresentationAnchorContentHostViewController) {
+    let inset = anchoredShellVerticalContentInset(for: configuration.presentationConfiguration)
+    guard inset > 0, let expanded = expandedTabInternal,
+          let tab = tabs.first(where: { $0.id == expanded }) else { return }
+    let contentVC = resolveContentController(for: tab)
+    let childSize = contentVC.preferredContentSize
+    guard childSize.height > 0 else { return }
+    let target = CGSize(width: childSize.width, height: childSize.height + inset)
+    if container.preferredContentSize != target {
+      container.preferredContentSize = target
+    }
+  }
+
+  private func anchoredShellVerticalContentInset(
+    for presentation: FKSheetPresentationConfiguration
+  ) -> CGFloat {
+    CGFloat(presentation.contentInsets.top + presentation.contentInsets.bottom)
+  }
+
   private func makePresentationAnchorConfiguration() -> FKAnchorConfiguration {
     let placement = configuration.anchorPlacement
     let sourceView = placement?.sourceView ?? tabBarHost.tabBar
     let hostView = placement?.overlayHostView ?? tabBarHost.view
+    let expansionDirection = placement?.expansionDirection ?? .down
+    // Upward panels attach near the bottom edge; `.belowAnchorOnly` leaves no tappable mask above the anchor.
+    let maskCoveragePolicy: FKAnchorConfiguration.MaskCoveragePolicy =
+      expansionDirection == .up ? .fullScreen : .belowAnchorOnly
+    let resolvedHostStrategy = placement?.hostStrategy
+      ?? .inProvidedContainer(FKWeakReference(hostView))
 
     return FKAnchorConfiguration(
       anchor: FKAnchor(
         sourceView: sourceView,
         edge: placement?.attachmentEdge ?? .bottom,
-        direction: placement?.expansionDirection ?? .down,
+        direction: expansionDirection,
         alignment: placement?.horizontalAlignment ?? .fill,
         widthPolicy: placement?.widthPolicy ?? .matchContainer,
         offset: placement?.attachmentOffset ?? 0
       ),
-      hostStrategy: .inProvidedContainer(FKWeakReference(hostView)),
+      hostStrategy: resolvedHostStrategy,
       zOrderPolicy: .keepAnchorAbovePresentation,
-      maskCoveragePolicy: .belowAnchorOnly
+      maskCoveragePolicy: maskCoveragePolicy
     )
   }
 
@@ -506,15 +543,14 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
     return (from: from, to: to, animated: animated)
   }
 
-  private func containerTransition(for animation: FKTabBarFilterDropdownConfiguration.ReplaceInPlaceAnimation) -> FKSheetPresentationAnchorContentTransition {
-    switch animation {
-    case let .crossfade(duration):
-      return .crossfade(duration: duration)
-    case let .slideVertical(direction, duration):
-      let slideDirection: FKSheetPresentationAnchorContentTransition.SlideDirection = (direction == .up) ? .up : .down
-      return .slideVertical(direction: slideDirection, duration: duration)
-    }
+  /// Heals stale bookkeeping when the sheet host is gone but dismiss cleanup did not run.
+  private func synchronizeDismissedPresentationIfNeeded() -> Bool {
+    guard let controller = fkSheetPresentationController else { return false }
+    guard controller.isTransitioning == false, controller.isPresented == false else { return false }
+    presentationControllerDidDismiss(controller)
+    return true
   }
+
 }
 
 // MARK: - FKSheetPresentationControllerDelegate
@@ -563,9 +599,13 @@ extension FKTabBarFilterDropdownController: FKSheetPresentationControllerDelegat
   }
 }
 
-private extension FKTabBarFilterDropdownConfiguration.SwitchAnimationStyle {
-  var isReplaceInPlace: Bool {
-    if case .replaceInPlace = self { return true }
-    return false
+private extension FKSheetPresentationAnchorReplacementPolicy {
+  var preferredContentSizeLayoutUpdate: (animated: Bool, duration: TimeInterval) {
+    switch self {
+    case .dismissThenPresent:
+      return (false, 0)
+    case let .replaceInPlace(_, animateLayout, layoutDuration):
+      return (animateLayout, layoutDuration)
+    }
   }
 }

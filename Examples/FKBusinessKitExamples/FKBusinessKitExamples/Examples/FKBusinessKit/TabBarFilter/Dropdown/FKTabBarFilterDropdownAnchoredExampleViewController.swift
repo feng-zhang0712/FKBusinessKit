@@ -2,41 +2,17 @@ import UIKit
 import FKUIKit
 import FKBusinessKit
 
-/// Individual anchored-dropdown + ``FKTabBarFilterController`` patterns (English data, ``FKTabBarFilterExampleStaticData``).
+/// Anchored-dropdown + ``FKTabBarFilterController`` patterns that need a dedicated screen layout.
 enum FKTabBarFilterDropdownAnchoredExample: Int, CaseIterable {
   /// Six panel kinds with a scrollable, intrinsic-width tab strip.
   case scrollableSixPanels
-  /// Equal tabs: scope · course grid · multi-select tags.
-  case equalCommerce
-  /// Equal tabs: two-column browse · formats · sort list.
-  case equalLibrary
-  /// Equal tabs + default crossfade (baseline for comparing other equal-tab tweaks).
-  case compactCrossfadeBaseline
-  /// Tab changes dismiss then re-present the anchored shell.
-  case switchDismissThenPresent
-  /// In-place tab switch with vertical slide.
-  case switchSlideVertical
-  /// Heavier backdrop dimming.
-  case backdropStrongDim
-  /// Zero-alpha dim + passthrough interaction on the presenter.
-  case backdropPassthrough
-  /// No per-tab view-controller cache.
-  case contentRecreate
-  /// Slower ``FKTabBarFilterDropdownConfiguration/presentationLayoutAnimation`` after height changes.
-  case layoutAnimationSlow
+  /// ``FKTabBarFilterPanelFactory/PanelSource/custom(make:)`` tab.
+  case customPanelKind
 
   var menuTitle: String {
     switch self {
     case .scrollableSixPanels: return "All panel kinds · scrollable strip"
-    case .equalCommerce: return "Equal tabs · scope & catalog & tags"
-    case .equalLibrary: return "Equal tabs · browse & formats & sort"
-    case .compactCrossfadeBaseline: return "Equal tabs · crossfade baseline"
-    case .switchDismissThenPresent: return "Tab switch · dismiss then present"
-    case .switchSlideVertical: return "Tab switch · slide vertical"
-    case .backdropStrongDim: return "Backdrop · strong dim"
-    case .backdropPassthrough: return "Backdrop · passthrough (zero dim)"
-    case .contentRecreate: return "Content caching · recreate"
-    case .layoutAnimationSlow: return "Layout animation · slow relayout"
+    case .customPanelKind: return "Custom panel kind · factory"
     }
   }
 
@@ -44,24 +20,8 @@ enum FKTabBarFilterDropdownAnchoredExample: Int, CaseIterable {
     switch self {
     case .scrollableSixPanels:
       return "Hierarchy, grid, two chip columns, tags, and single list — intrinsic-width tabs."
-    case .equalCommerce:
-      return "Three equal-width tabs using dual grid, secondary chips, and multi-select tags."
-    case .equalLibrary:
-      return "Two-column list, primary chip grid, and centered single list."
-    case .compactCrossfadeBaseline:
-      return "Three compact tabs; default replace-in-place crossfade between panels."
-    case .switchDismissThenPresent:
-      return "Uses dismiss-then-present when changing tabs while the panel stays open."
-    case .switchSlideVertical:
-      return "Replace-in-place with a vertical slide between panel contents."
-    case .backdropStrongDim:
-      return "Higher dim alpha on the anchored presentation backdrop."
-    case .backdropPassthrough:
-      return "Zero dim + passthrough so taps fall through to the screen behind."
-    case .contentRecreate:
-      return "contentCachingPolicy .recreate — panels rebuild when re-opened."
-    case .layoutAnimationSlow:
-      return "Longer presentationLayoutAnimation when preferredContentSize changes."
+    case .customPanelKind:
+      return "Middle tab uses PanelSource.custom instead of a built-in panel recipe."
     }
   }
 
@@ -71,22 +31,8 @@ enum FKTabBarFilterDropdownAnchoredExample: Int, CaseIterable {
     switch self {
     case .scrollableSixPanels:
       return FKTabBarFilterExampleAppearance.makeHubFilterConfiguration()
-    case .equalCommerce, .equalLibrary:
+    case .customPanelKind:
       return FKTabBarFilterExampleAppearance.makeEqualThreeFilterConfiguration()
-    case .compactCrossfadeBaseline:
-      return FKTabBarFilterExampleAppearance.makeFilterConfiguration(anchored: FKTabBarFilterExampleAppearance.equalThreeAnchoredConfiguration())
-    case .switchDismissThenPresent:
-      return FKTabBarFilterExampleAppearance.makeFilterConfiguration(anchored: FKTabBarFilterExampleAppearance.equalThreeDismissThenPresent())
-    case .switchSlideVertical:
-      return FKTabBarFilterExampleAppearance.makeFilterConfiguration(anchored: FKTabBarFilterExampleAppearance.equalThreeSlideVerticalSwitch())
-    case .backdropStrongDim:
-      return FKTabBarFilterExampleAppearance.makeFilterConfiguration(anchored: FKTabBarFilterExampleAppearance.equalThreeStrongBackdrop())
-    case .backdropPassthrough:
-      return FKTabBarFilterExampleAppearance.makeFilterConfiguration(anchored: FKTabBarFilterExampleAppearance.equalThreePassthroughBackdrop())
-    case .contentRecreate:
-      return FKTabBarFilterExampleAppearance.makeFilterConfiguration(anchored: FKTabBarFilterExampleAppearance.equalThreeRecreateContent())
-    case .layoutAnimationSlow:
-      return FKTabBarFilterExampleAppearance.makeFilterConfiguration(anchored: FKTabBarFilterExampleAppearance.equalThreeSlowLayoutAnimation())
     }
   }
 
@@ -94,17 +40,11 @@ enum FKTabBarFilterDropdownAnchoredExample: Int, CaseIterable {
     switch self {
     case .scrollableSixPanels:
       return FKTabBarFilterExampleState.presetFullHub()
-    case .equalCommerce:
-      return FKTabBarFilterExampleState.presetEqualBusiness()
-    case .equalLibrary:
+    case .customPanelKind:
       return FKTabBarFilterExampleState.presetEqualKnowledge()
-    case .compactCrossfadeBaseline, .switchDismissThenPresent, .switchSlideVertical, .backdropStrongDim, .backdropPassthrough,
-         .contentRecreate, .layoutAnimationSlow:
-      return FKTabBarFilterExampleState.presetCompactThree()
     }
   }
 
-  /// `tagsTitle` is only read for ``scrollableSixPanels`` (live tab title after clearing tags).
   fileprivate func makeTabs(tagsTitle: @escaping () -> String) -> [FKTabBarFilterTab<String>] {
     switch self {
     case .scrollableSixPanels:
@@ -122,34 +62,52 @@ enum FKTabBarFilterDropdownAnchoredExample: Int, CaseIterable {
         ),
         .init(id: "sort", panelKind: .singleList, title: "Newest"),
       ]
-    case .equalCommerce:
-      return [
-        .init(id: "scope", panelKind: .gridSecondary, title: "Scope"),
-        .init(id: "catalog", panelKind: .dualHierarchy, title: "Catalog"),
-        .init(
-          id: "tags",
-          panelKind: .tags,
-          title: "Topics",
-          subtitle: "Optional multi-select",
-          allowsMultipleSelection: true
-        ),
-      ]
-    case .equalLibrary, .compactCrossfadeBaseline, .switchDismissThenPresent, .switchSlideVertical, .backdropStrongDim,
-         .backdropPassthrough, .contentRecreate, .layoutAnimationSlow:
+    case .customPanelKind:
       return [
         .init(id: "browse", panelKind: .hierarchy, title: "Browse"),
-        .init(id: "formats", panelKind: .gridPrimary, title: "Formats"),
+        .init(id: "promo", panelKind: .custom("promo"), title: "Promo"),
         .init(id: "sort", panelKind: .singleList, title: "Sort"),
       ]
     }
   }
 
   fileprivate var usesTagsTitleCallback: Bool {
-    switch self {
-    case .scrollableSixPanels: return true
-    default: return false
-    }
+    self == .scrollableSixPanels
   }
+
+  fileprivate var includesCustomPromoPanel: Bool {
+    self == .customPanelKind
+  }
+
+  var listRow: FKTabBarFilterExampleListRow {
+    FKTabBarFilterExampleListRow(
+      title: menuTitle,
+      subtitle: menuSubtitle,
+      makeViewController: { FKTabBarFilterDropdownAnchoredExampleViewController(anchoredExample: self) }
+    )
+  }
+
+  static let hubSections: [FKTabBarFilterExampleListSection] = [
+    FKTabBarFilterExampleListSection(
+      title: "Filter strip demos",
+      rows: [
+        FKTabBarFilterDropdownAnchoredExample.scrollableSixPanels.listRow,
+        FKTabBarFilterExampleListRow(
+          title: "Equal-width tabs",
+          subtitle: "Commerce vs library datasets — switch panel recipes on one screen."
+        ) {
+          FKTabBarFilterEqualWidthTabsPlaygroundViewController()
+        },
+        FKTabBarFilterExampleListRow(
+          title: "Configuration playground",
+          subtitle: "Tab switching, caching, backdrop, hairline, and slow relayout — toggles on one screen."
+        ) {
+          FKTabBarFilterConfigurationPlaygroundViewController()
+        },
+        FKTabBarFilterDropdownAnchoredExample.customPanelKind.listRow,
+      ]
+    ),
+  ]
 }
 
 /// Hosts ``FKTabBarFilterController`` for a single ``FKTabBarFilterDropdownAnchoredExample`` pattern.
@@ -176,23 +134,16 @@ final class FKTabBarFilterDropdownAnchoredExampleViewController: UIViewControlle
     title = anchoredExample.screenTitle
     view.backgroundColor = .systemBackground
 
-    let panelFactory: FKTabBarFilterPanelFactory
-    if anchoredExample.usesTagsTitleCallback {
-      panelFactory = FKTabBarFilterExamplePanelFactoryBuilder.makeFactory(
-        bindingTo: filterState,
-        filterConfiguration: anchoredExample.filterConfiguration,
-        onTagsSelectionEmptied: { [weak self] in
-          guard let self else { return }
-          self.tagsTabTitle = "Topics"
-          self.filterHost.dropdownController.reloadTabBarItems()
-        }
-      )
-    } else {
-      panelFactory = FKTabBarFilterExamplePanelFactoryBuilder.makeFactory(
-        bindingTo: filterState,
-        filterConfiguration: anchoredExample.filterConfiguration
-      )
-    }
+    let panelFactory = FKTabBarFilterExamplePanelFactoryBuilder.makeFactory(
+      bindingTo: filterState,
+      wrapsPanelWithTopHairline: true,
+      onTagsSelectionEmptied: anchoredExample.usesTagsTitleCallback ? { [weak self] in
+        guard let self else { return }
+        self.tagsTabTitle = "Topics"
+        self.filterHost.dropdownController.reloadTabBarItems()
+      } : nil,
+      includesCustomPromoPanel: anchoredExample.includesCustomPromoPanel
+    )
 
     let tabs = anchoredExample.makeTabs(tagsTitle: { [weak self] in self?.tagsTabTitle ?? "Topics" })
     filterHost = FKTabBarFilterController(
@@ -209,8 +160,6 @@ final class FKTabBarFilterDropdownAnchoredExampleViewController: UIViewControlle
       overlayHost: view,
       logSelection: true
     ) else { return }
-    FKTabBarFilterExampleChrome.installBodyPlaceholder(below: strip.bottomAnchor, in: self)
-    let tabIDs = anchoredExample.makeTabs(tagsTitle: { [weak self] in self?.tagsTabTitle ?? "Topics" }).map(\.id)
-    tabIDs.forEach { filterHost.invalidateCachedPanelContent(for: $0) }
+    _ = FKTabBarFilterExampleChrome.installBodyPlaceholder(below: strip.bottomAnchor, in: self)
   }
 }

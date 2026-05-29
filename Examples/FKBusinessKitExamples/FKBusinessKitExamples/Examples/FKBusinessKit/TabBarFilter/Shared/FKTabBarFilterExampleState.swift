@@ -43,13 +43,4 @@ final class FKTabBarFilterExampleState {
     s.sortSection = FKTabBarFilterExampleStaticData.sortSection
     return s
   }
-
-  /// Three compact tabs for animation / backdrop experiments.
-  static func presetCompactThree() -> FKTabBarFilterExampleState {
-    let s = FKTabBarFilterExampleState()
-    s.knowledgeModel = FKTabBarFilterExampleStaticData.catalogTwoColumn
-    s.fileTypeSections = FKTabBarFilterExampleStaticData.fileTypeSections
-    s.sortSection = FKTabBarFilterExampleStaticData.sortSection
-    return s
-  }
 }

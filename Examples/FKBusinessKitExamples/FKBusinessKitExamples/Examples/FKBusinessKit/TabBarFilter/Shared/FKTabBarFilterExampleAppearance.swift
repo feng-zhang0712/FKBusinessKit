@@ -7,6 +7,8 @@ enum FKTabBarFilterExampleAppearance {
   /// Total height for the embedded ``FKTabBarFilterController`` chrome row (was 56; −4pt).
   static let filterStripChromeHeight: CGFloat = 52
 
+  static let panelLoadingTitle = "Loading…"
+
   /// Selected chip / grid label color in filter panels (`FKTabBarFilterPillStyle` default); strip expanded tab uses the same.
   private static let filterSelectionAccentColor = UIColor.systemRed
 
@@ -49,8 +51,7 @@ enum FKTabBarFilterExampleAppearance {
   static func makeHubFilterConfiguration() -> FKTabBarFilterConfiguration<String> {
     FKTabBarFilterConfiguration(
       dropdownConfiguration: hubAnchoredConfiguration(),
-      defaultTabStrip: filterTabStrip,
-      panelLoadingTitle: "Loading…"
+      defaultTabStrip: filterTabStrip
     )
   }
 
@@ -58,8 +59,7 @@ enum FKTabBarFilterExampleAppearance {
   static func makeEqualThreeFilterConfiguration() -> FKTabBarFilterConfiguration<String> {
     FKTabBarFilterConfiguration(
       dropdownConfiguration: equalThreeAnchoredConfiguration(),
-      defaultTabStrip: filterTabStrip,
-      panelLoadingTitle: "Loading…"
+      defaultTabStrip: filterTabStrip
     )
   }
 
@@ -91,22 +91,35 @@ enum FKTabBarFilterExampleAppearance {
   static func makeFilterConfiguration(anchored: FKTabBarFilterDropdownConfiguration) -> FKTabBarFilterConfiguration<String> {
     FKTabBarFilterConfiguration(
       dropdownConfiguration: anchored,
-      defaultTabStrip: filterTabStrip,
-      panelLoadingTitle: "Loading…"
+      defaultTabStrip: filterTabStrip
     )
   }
 
   /// Same tab strip as equal-three, but each tab switch dismisses and re-presents the panel shell.
   static func equalThreeDismissThenPresent() -> FKTabBarFilterDropdownConfiguration {
     var cfg = equalThreeAnchoredConfiguration()
-    cfg.switchAnimationStyle = .dismissThenPresent(dismissAnimated: true, presentAnimated: true)
+    cfg.anchorReplacementPolicy = .dismissThenPresent(dismissAnimated: true, presentAnimated: true)
     return cfg
   }
 
-  /// Vertical slide when swapping tabs in place.
+  /// Vertical slide upward when swapping tabs in place.
+  static func equalThreeSlideUpSwitch() -> FKTabBarFilterDropdownConfiguration {
+    var cfg = equalThreeAnchoredConfiguration()
+    cfg.anchorReplacementPolicy = .replaceInPlace(contentTransition: .slideVertical(direction: .up, duration: 0.22))
+    return cfg
+  }
+
+  /// Default per-tab cache (contrast with ``equalThreeRecreateContent()``).
+  static func equalThreeCachePerTab() -> FKTabBarFilterDropdownConfiguration {
+    var cfg = equalThreeAnchoredConfiguration()
+    cfg.contentCachingPolicy = .cachePerTab
+    return cfg
+  }
+
+  /// Vertical slide downward when swapping tabs in place.
   static func equalThreeSlideVerticalSwitch() -> FKTabBarFilterDropdownConfiguration {
     var cfg = equalThreeAnchoredConfiguration()
-    cfg.switchAnimationStyle = .replaceInPlace(animation: .slideVertical(direction: .down, duration: 0.22))
+    cfg.anchorReplacementPolicy = .replaceInPlace(contentTransition: .slideVertical(direction: .down, duration: 0.22))
     return cfg
   }
 
@@ -133,10 +146,14 @@ enum FKTabBarFilterExampleAppearance {
     return cfg
   }
 
-  /// Slower relayout when ``preferredContentSize`` changes (e.g. two-column panels).
+  /// Slower anchor relayout when ``preferredContentSize`` changes (e.g. two-column panels).
   static func equalThreeSlowLayoutAnimation() -> FKTabBarFilterDropdownConfiguration {
     var cfg = equalThreeAnchoredConfiguration()
-    cfg.presentationLayoutAnimation = .init(duration: 0.42)
+    cfg.anchorReplacementPolicy = .replaceInPlace(
+      contentTransition: .crossfade(duration: 0.18),
+      animateLayout: true,
+      layoutAnimationDuration: 0.42
+    )
     return cfg
   }
 }

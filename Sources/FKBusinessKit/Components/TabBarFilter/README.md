@@ -2,8 +2,6 @@
 
 Composite UIKit component: **`FKTabBar`** strip + **anchor-embedded panels** via **`FKSheetPresentationController`**, with optional **filter panel** factories and chrome.
 
-Combines the former **AnchoredDropdownController** (generic tab + anchored panel hosting) and **Filter** (filter strip, panel kinds, selection handling) into one module folder.
-
 ## Layout
 
 | Location | Role |
@@ -21,7 +19,7 @@ Combines the former **AnchoredDropdownController** (generic tab + anchored panel
 
 - Tap a tab to **expand** a panel anchored under the bar (or a custom view).
 - Tap the **same** tab to **collapse**.
-- Tap **another** tab to **switch** (in-place animation or dismiss-then-present, configurable).
+- Tap **another** tab to **switch** (in-place or dismiss-then-present via ``FKSheetPresentationAnchorReplacementPolicy``).
 - Dismiss via **backdrop / swipe** when enabled on `presentationConfiguration.dismissBehavior`.
 
 Panel content is **your** `UIViewController` (or hosted `UIView`) per tab — use ``FKTabBarFilterDropdownController`` directly.
@@ -35,9 +33,20 @@ Panel content is **your** `UIViewController` (or hosted `UIView`) per tab — us
 
 Default: source = ``FKTabBarFilterTabBarHost/tabBar``, overlay = the host’s `view`.
 
-Custom: assign ``FKTabBarFilterDropdownConfiguration/anchorPlacement`` or call ``FKTabBarFilterDropdownController/setAnchor(source:overlayHost:)``. Adjust geometry with ``updateAnchorPlacement(...)``; ``resetAnchorToDefault()`` clears placement.
+Custom: assign ``FKTabBarFilterDropdownConfiguration/anchorPlacement`` or call ``FKTabBarFilterDropdownController/setAnchor(source:overlayHost:)``. Adjust geometry with ``updateAnchorPlacement(attachmentEdge:expansionDirection:horizontalAlignment:widthPolicy:attachmentOffset:)``; ``resetAnchorToDefault()`` clears placement.
 
-Choose `overlayHost` as an ancestor of `source` when possible so mask and layout bounds match the screen region you expect.
+``FKAnchor`` supports **top/bottom** attachment edges and **up/down** expansion only. Typical zones:
+
+| Zone | `attachmentEdge` | `expansionDirection` |
+|------|------------------|----------------------|
+| Below navigation bar / screen top | `.bottom` | `.down` |
+| Screen bottom toolbar | `.top` | `.up` |
+
+Left/right edge trays are **not** part of TabBarFilter — use ``FKSheetPresentationConfiguration/Layout/edge(_:)`` on ``FKSheetPresentationController`` directly.
+
+**Overlay host:** Pin to a full-screen ancestor when the dimmed backdrop should cover more than the strip container. ``FKTabBarFilterController/pinAnchoredPresentationOverlay(to:)`` sets `source = tabBar` and `overlayHost = hostView`. ``FKTabBarFilterHosting/embedStrip`` does the same after embedding.
+
+**Upward panels:** Mask coverage switches to `.fullScreen` automatically when `expansionDirection == .up` so backdrop taps dismiss reliably.
 
 ## Main types
 
@@ -47,17 +56,27 @@ Choose `overlayHost` as an ancestor of `source` when possible so mask and layout
 | ``FKTabBarFilterController`` | Filter strip built on ``FKTabBarFilterDropdownController`` + ``FKTabBarFilterPanelFactory``. |
 | ``FKTabBarFilterHosting`` | Embed strip under a top anchor and pin presentation overlay to a host view. |
 | ``FKTabBarFilterDropdownTab`` / ``FKTabBarFilterTab`` | Tab id, bar item, and content / panel kind. |
-| ``FKTabBarFilterDropdownConfiguration`` / ``FKTabBarFilterConfiguration`` | Tab bar + sheet presentation, switch animation, caching, events. |
-| ``FKTabBarFilterPanelFactory`` | Creates panel VCs for ``FKTabBarFilterPanelKind`` values. |
+| ``FKTabBarFilterDropdownConfiguration`` / ``FKTabBarFilterConfiguration`` | Tab bar + sheet presentation, ``anchorReplacementPolicy``, caching, ``dropdownEvents``. |
+| ``FKTabBarFilterPanelKind`` | Stable kind id; maps to ``FKTabBarFilterPanelFactory/PanelSource`` (see kind doc comment). |
+| ``FKTabBarFilterPanelFactory`` | Creates panel VCs for ``FKTabBarFilterPanelKind`` values (loading title, hairline wrapper). |
 | ``FKTabBarFilterTabBarHost`` | Custom chrome around `FKTabBar`; default type ``FKTabBarFilterDefaultTabBarHost``. |
+
+## Configuration paths
+
+| Path | Use |
+|------|-----|
+| ``FKTabBarFilterController`` + ``setFilterConfiguration(_:)`` | Filter strip — syncs dropdown config and ``dropdownEvents``. |
+| ``FKTabBarFilterDropdownController`` + ``configuration`` / ``events`` | Low-level dropdown only. |
+
+Avoid mutating ``FKTabBarFilterController/dropdownController`` directly after ``setFilterConfiguration(_:)`` without updating ``filterConfiguration`` — the two can drift.
 
 ## Dependencies
 
 - **FKUIKit**: `FKTabBar`, `FKSheetPresentationController`, anchor types.
 - **FKCoreKit**: optional for your own panel code.
 
-Integration: build tabs, pick configuration, optionally `events`, then ``embed(in:pinTo:)`` / ``FKTabBarFilterHosting/embedStrip(...)`` or add as a child view controller.
+Integration: build tabs, pick configuration, optionally ``dropdownEvents``, then ``embed(in:pinTo:)`` / ``FKTabBarFilterHosting/embedStrip(...)`` or add as a child view controller.
 
 ## Examples
 
-See `Examples/FKBusinessKitExamples/FKBusinessKitExamples/Examples/FKBusinessKit/TabBarFilter/` — entry hub ``FKTabBarFilterExamplesHubViewController``.
+See `Examples/FKBusinessKitExamples/.../TabBarFilter/` — entry hub ``FKTabBarFilterExamplesHubViewController``.

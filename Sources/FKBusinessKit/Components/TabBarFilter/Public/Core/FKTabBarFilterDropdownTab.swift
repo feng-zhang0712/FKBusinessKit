@@ -7,12 +7,9 @@ public struct FKTabBarFilterDropdownTab<TabID: Hashable> {
   public struct StateSnapshot: Equatable {
     /// Currently expanded tab (if any).
     public var expandedTab: TabID?
-    /// Most recently selected tab (if any).
-    public var selectedTab: TabID?
 
-    public init(expandedTab: TabID?, selectedTab: TabID?) {
+    public init(expandedTab: TabID?) {
       self.expandedTab = expandedTab
-      self.selectedTab = selectedTab
     }
   }
 

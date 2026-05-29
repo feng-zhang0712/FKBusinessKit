@@ -2,6 +2,10 @@
 
 import PackageDescription
 
+/// Lowest FKKit tag this package compiles against (TabBarFilter → `FKSheetPresentationController` / `FKUIKit`).
+/// Raise when adopting APIs from a newer FKKit release; keep `FKBusinessKit.podspec` FKCoreKit/FKUIKit deps in sync.
+private let fkKitMinimumVersion = Version(0, 55, 0)
+
 let package = Package(
   name: "FKBusinessKit",
   platforms: [
@@ -11,8 +15,12 @@ let package = Package(
     .library(name: "FKBusinessKit", targets: ["FKBusinessKit"]),
   ],
   dependencies: [
-    // TabBarFilter needs FKUIKit SheetPresentation — raise minimum after the next FKKit release (e.g. `from: "0.55.0"`).
-    .package(url: "https://github.com/feng-zhang0712/FKKit.git", from: "0.54.0"),
+    // Resolves to the highest FKKit version compatible with `fkKitMinimumVersion` and the app’s graph (< 1.0.0).
+    // Do not use `branch:` or `exact:` here for published releases.
+    .package(
+      url: "https://github.com/feng-zhang0712/FKKit.git",
+      .upToNextMajor(from: fkKitMinimumVersion)
+    ),
   ],
   targets: [
     .target(

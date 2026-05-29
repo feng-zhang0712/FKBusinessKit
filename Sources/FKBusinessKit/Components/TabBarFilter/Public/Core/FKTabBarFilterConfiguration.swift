@@ -40,12 +40,12 @@ public struct FKTabBarFilterTabStripConfiguration: Sendable {
   }
 }
 
-/// Top-level settings for ``FKTabBarFilterController``: anchored dropdown shell, strip defaults, panel chrome defaults, and lifecycle hooks.
+/// Top-level settings for ``FKTabBarFilterController``: anchored dropdown shell, strip defaults, and lifecycle hooks.
 ///
-/// Panel **content** (two-column models, chips, list styles, etc.) stays on ``FKTabBarFilterPanelFactory`` / per-panel `Configuration`
-/// types so each panel kind can evolve independently.
+/// Panel **content** (models, chips, list styles, loading title, hairline wrapper, etc.) belongs on ``FKTabBarFilterPanelFactory``
+/// and per-panel `Configuration` types.
 public struct FKTabBarFilterConfiguration<TabID: Hashable> {
-  /// Dropdown + tab bar behavior (backdrop, switch animation, caching, anchor placement, …).
+  /// Dropdown + tab bar behavior (backdrop, anchor replacement, caching, anchor placement, …).
   public var dropdownConfiguration: FKTabBarFilterDropdownConfiguration
 
   /// Optional transitions and state hooks on the anchored dropdown.
@@ -54,24 +54,14 @@ public struct FKTabBarFilterConfiguration<TabID: Hashable> {
   /// Used when ``FKTabBarFilterTab/tabStrip`` is `nil`.
   public var defaultTabStrip: FKTabBarFilterTabStripConfiguration
 
-  /// Passed to ``FKTabBarFilterPanelFactory/loadingTitle`` when you build the factory with these values.
-  public var panelLoadingTitle: String
-
-  /// Passed to ``FKTabBarFilterPanelFactory/wrapsPanelWithTopHairline`` when you build the factory with these values.
-  public var wrapsPanelWithTopHairline: Bool
-
   public init(
     dropdownConfiguration: FKTabBarFilterDropdownConfiguration,
     dropdownEvents: FKTabBarFilterDropdownConfiguration.Events<TabID> = .init(),
-    defaultTabStrip: FKTabBarFilterTabStripConfiguration = .init(),
-    panelLoadingTitle: String = "Loading...",
-    wrapsPanelWithTopHairline: Bool = true
+    defaultTabStrip: FKTabBarFilterTabStripConfiguration = .init()
   ) {
     self.dropdownConfiguration = dropdownConfiguration
     self.dropdownEvents = dropdownEvents
     self.defaultTabStrip = defaultTabStrip
-    self.panelLoadingTitle = panelLoadingTitle
-    self.wrapsPanelWithTopHairline = wrapsPanelWithTopHairline
   }
 
   /// Creates filter settings with tuned anchored-dropdown defaults.

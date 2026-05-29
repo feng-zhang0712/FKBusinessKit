@@ -112,6 +112,11 @@ public final class FKTabBarFilterPanelFactory {
       : panel
   }
 
+  /// Placeholder shown when no ``PanelSource`` is registered for a ``FKTabBarFilterPanelKind``.
+  public func makeFallbackPanel() -> UIViewController {
+    loadingPanel()
+  }
+
   private func loadingPanel() -> UIViewController {
     let vc = UIViewController()
     vc.preferredContentSize = CGSize(width: 0, height: 72)
