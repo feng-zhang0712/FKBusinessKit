@@ -69,19 +69,13 @@ public enum FKTabBarFilterHosting {
     horizontalInset: CGFloat = 4,
     verticalInset: CGFloat = 6
   ) {
-    tabBar.itemButtonConfigurator = { button, _, _ in
-      let appearance = FKButtonAppearance(
-        backgroundColor: .clear,
-        contentInsets: .init(
-          top: verticalInset,
-          leading: horizontalInset,
-          bottom: verticalInset,
-          trailing: horizontalInset
-        )
-      )
-      button.setAppearance(appearance, for: .normal)
-      button.setAppearance(appearance, for: .selected)
-      button.setAppearance(appearance, for: .disabled)
-    }
+    var layout = tabBar.configuration.layout
+    layout.itemContentInsets = .init(
+      top: verticalInset,
+      leading: horizontalInset,
+      bottom: verticalInset,
+      trailing: horizontalInset
+    )
+    tabBar.configuration.layout = layout
   }
 }

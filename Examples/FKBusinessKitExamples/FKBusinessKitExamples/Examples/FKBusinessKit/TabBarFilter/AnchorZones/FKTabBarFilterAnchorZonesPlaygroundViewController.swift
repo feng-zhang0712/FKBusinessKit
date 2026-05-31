@@ -51,10 +51,6 @@ final class FKTabBarFilterAnchorZonesPlaygroundViewController: UIViewController 
     fatalError("init(coder:) has not been implemented")
   }
 
-  deinit {
-    zoneInstallation?.edgeMarker?.removeFromSuperview()
-  }
-
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "Anchor zones"

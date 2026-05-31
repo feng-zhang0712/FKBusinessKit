@@ -4,7 +4,7 @@ import PackageDescription
 
 /// Lowest FKKit tag this package compiles against (TabBarFilter → `FKSheetPresentationController` / `FKUIKit`).
 /// Raise when adopting APIs from a newer FKKit release; keep `FKBusinessKit.podspec` FKCoreKit/FKUIKit deps in sync.
-private let fkKitMinimumVersion = Version(0, 55, 0)
+private let fkKitMinimumVersion = Version(0, 58, 0)
 
 let package = Package(
   name: "FKBusinessKit",

@@ -129,7 +129,7 @@ final class FKTabBarFilterConfigurationPlaygroundViewController: UIViewControlle
       overlayHost: view,
       logSelection: false
     ) else { return }
-    FKTabBarFilterExampleChrome.installBodyPlaceholder(below: strip.bottomAnchor, in: self)
+    _ = FKTabBarFilterExampleChrome.installBodyPlaceholder(below: strip.bottomAnchor, in: self)
   }
 
   private func buildDropdownConfiguration() -> FKTabBarFilterDropdownConfiguration {
