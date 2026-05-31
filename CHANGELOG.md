@@ -4,6 +4,17 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-01
+
+### Changed
+
+- Raise minimum FKKit dependency to `0.58.0` (`Package.swift`, `FKBusinessKit.podspec`).
+
+### Fixed
+
+- **TabBarFilter** — migrate compact tab button insets to `FKTabBarConfiguration.layout.itemContentInsets` for FKUIKit 0.58 `FKTabBar` API.
+- **FKBusinessKitExamples** — resolve Swift 6 strict-concurrency warnings in TabBarFilter anchor-zone and configuration playgrounds.
+
 ## [0.1.0] - 2026-05-29
 
 ### Added
@@ -23,4 +34,5 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 - Package scope is **new business/composite components** on FKKit. Legacy **BusinessKit** infrastructure (`FKBusinessKit.shared`, version, track, i18n, lifecycle, deeplink, utils) lives in **FKKit** (`FKCoreKit/BusinessKit`) — not in this repository.
 
+[0.1.1]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.1.1
 [0.1.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.1.0

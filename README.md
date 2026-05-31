@@ -1,7 +1,7 @@
 # FKBusinessKit
 
 [![iOS](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.1.0)
+[![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)](https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.1.1)
 [![Swift](https://img.shields.io/badge/Swift-6.0%2B-orange.svg)](https://swift.org/)
 [![SPM](https://img.shields.io/badge/SPM-supported-brightgreen.svg)](https://swift.org/package-manager/)
 [![CocoaPods](https://img.shields.io/badge/CocoaPods-supported-ee3322.svg)](https://cocoapods.org/)
@@ -35,7 +35,7 @@ It is distributed via **Swift Package Manager (SPM)** and **CocoaPods**. `import
 - Pure Swift implementation (Swift 6 language mode in package settings).
 - **iOS-only** — `platforms: [.iOS(.v15)]` in `Package.swift`.
 - **`TabBarFilter`** — anchored dropdown filter strip with built-in panel kinds and custom panel support ([component README](Sources/FKBusinessKit/Components/TabBarFilter/README.md)).
-- Depends on **FKCoreKit** and **FKUIKit** (FKKit `0.55.0+`, see [FKKit dependency & versions](#fkit-dependency--versions)).
+- Depends on **FKCoreKit** and **FKUIKit** (FKKit `0.58.0+`, see [FKKit dependency & versions](#fkit-dependency--versions)).
 - GitHub Actions CI: builds on **iOS Simulator**.
 - Example app under [`Examples/FKBusinessKitExamples`](Examples/FKBusinessKitExamples).
 
@@ -57,31 +57,31 @@ FKBusinessKit/
 ## Requirements
 - **iOS 15.0+**
 - Swift **6.0+** / **Xcode 16.2+**
-- **[FKKit](https://github.com/feng-zhang0712/FKKit)** `0.55.0+` — resolved transitively when you depend on **FKBusinessKit** (see below)
+- **[FKKit](https://github.com/feng-zhang0712/FKKit)** `0.58.0+` — resolved transitively when you depend on **FKBusinessKit** (see below)
 
 ## FKKit dependency & versions
 
-`Package.swift` declares FKKit with **`.upToNextMajor(from: "0.55.0")`** (equivalent to `from: "0.55.0"`): consumers resolve **one** FKKit package in the `0.55.0 … < 1.0.0` range — typically the **highest** version that satisfies your app and FKBusinessKit.
+`Package.swift` declares FKKit with **`.upToNextMajor(from: "0.58.0")`** (equivalent to `from: "0.58.0"`): consumers resolve **one** FKKit package in the `0.58.0 … < 1.0.0` range — typically the **highest** version that satisfies your app and FKBusinessKit.
 
 | Topic | Guidance |
 | --- | --- |
-| **Minimum FKKit** | `0.55.0` — required for TabBarFilter (`FKSheetPresentationController`, etc.). Bumped in `Package.swift` when this repo adopts newer FKKit APIs. |
+| **Minimum FKKit** | `0.58.0` — required for TabBarFilter (`FKSheetPresentationController`, FKUIKit 0.58 `FKTabBar`, etc.). Bumped in `Package.swift` when this repo adopts newer FKKit APIs. |
 | **App adds only FKBusinessKit** | FKKit is pulled in transitively; no duplicate modules or import conflicts. |
-| **App also adds FKUIKit** | Fine for UI-heavy targets. Use the **same** FKKit package URL and a **lower bound ≥ `0.55.0`** so SPM picks a single resolved version. |
+| **App also adds FKUIKit** | Fine for UI-heavy targets. Use the **same** FKKit package URL and a **lower bound ≥ `0.58.0`** so SPM picks a single resolved version. |
 | **Staying current** | In your app: **File → Packages → Update to Latest Package Versions**, or `swift package update`. |
 | **Maintainers** | After raising the minimum in `Package.swift`, update `FKBusinessKit.podspec` and this README. |
 
 ## Installation (SPM)
 
 ### Xcode
-1. Add **FKBusinessKit**: `https://github.com/feng-zhang0712/FKBusinessKit.git` (from `0.1.0`)
+1. Add **FKBusinessKit**: `https://github.com/feng-zhang0712/FKBusinessKit.git` (from `0.1.1`)
 2. Link **`FKBusinessKit`** to your app target (FKKit is resolved transitively).
-3. **Optional:** also add **FKKit** (`from: "0.55.0"`) if many targets use `FKUIKit` directly without `import FKBusinessKit`.
+3. **Optional:** also add **FKKit** (`from: "0.58.0"`) if many targets use `FKUIKit` directly without `import FKBusinessKit`.
 
 ### Package.swift (typical app)
 ```swift
 dependencies: [
-  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.1.0"),
+  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.1.1"),
 ],
 targets: [
   .target(
@@ -96,8 +96,8 @@ targets: [
 ### Package.swift (app also depends on FKKit directly)
 ```swift
 dependencies: [
-  .package(url: "https://github.com/feng-zhang0712/FKKit.git", from: "0.55.0"),
-  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.1.0"),
+  .package(url: "https://github.com/feng-zhang0712/FKKit.git", from: "0.58.0"),
+  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.1.1"),
 ],
 targets: [
   .target(
@@ -123,8 +123,8 @@ dependencies: [
 ```ruby
 platform :ios, '15.0'
 
-pod 'FKCoreKit',     :git => 'https://github.com/feng-zhang0712/FKKit.git', :tag => '0.55.0'
-pod 'FKBusinessKit', :git => 'https://github.com/feng-zhang0712/FKBusinessKit.git', :tag => '0.1.0'
+pod 'FKCoreKit',     :git => 'https://github.com/feng-zhang0712/FKKit.git', :tag => '0.58.0'
+pod 'FKBusinessKit', :git => 'https://github.com/feng-zhang0712/FKBusinessKit.git', :tag => '0.1.1'
 ```
 
 Local development:
