@@ -31,7 +31,22 @@ enum FKTabBarFilterPlaygroundFormViews {
     let control = UISegmentedControl(items: items)
     control.selectedSegmentIndex = selectedIndex
     control.addTarget(target, action: action, for: .valueChanged)
-    return labeledControl(title: title, control: control)
+    return labeledSegment(title: title, control: control)
+  }
+
+  /// Vertical row: title above an existing ``UISegmentedControl``.
+  static func labeledSegment(title: String, control: UISegmentedControl) -> UIStackView {
+    let titleLabel = UILabel()
+    titleLabel.text = title
+    titleLabel.font = .preferredFont(forTextStyle: .subheadline)
+    titleLabel.textColor = .label
+
+    let column = UIStackView(arrangedSubviews: [titleLabel, control])
+    column.axis = .vertical
+    column.spacing = 6
+    column.alignment = .fill
+    column.translatesAutoresizingMaskIntoConstraints = false
+    return column
   }
 
   static func labeledSwitch(

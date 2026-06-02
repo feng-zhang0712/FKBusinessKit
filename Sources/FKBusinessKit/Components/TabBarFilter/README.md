@@ -34,6 +34,6 @@ let filter = FKTabBarFilterController(
 filter.configuration = updatedConfig // re-resolves tab items
 ```
 
-**Anchoring:** prefer ``FKTabBarFilterController/setAnchor(source:overlayHost:)`` and ``updateAnchorPlacement`` over mutating ``FKTabBarFilterConfiguration/anchorPlacement`` in place (tab strip items are not rebuilt for in-place placement edits).
+**Anchoring:** call ``pinAnchoredPresentationOverlay(to:)`` or ``setAnchor(source:overlayHost:)`` so the dimmed mask uses a full-screen host. Assigning a new ``configuration`` without ``anchorPlacement`` keeps the previous placement automatically; use ``resetAnchorToDefault()`` to clear it. When the strip lives in a short container (fixed height), the default overlay host is only that container — always pin to the screen root.
 
 See `Examples/FKBusinessKitExamples/.../TabBarFilter/`.

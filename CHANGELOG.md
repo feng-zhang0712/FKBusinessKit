@@ -18,6 +18,7 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 - **TabBarFilter** — `chevronTitle` uses ``FKTabBarItem/accessoryIcon`` so filter chevrons render on FKUIKit 0.59+.
 - **TabBarFilter** — ``FKTabBarFilterController`` rotates chevron accessories 180° on expand/collapse (FKKit filter-strip preset).
 - **TabBarFilter** — chevron accessory tint follows title highlight when chevron/title colors match (FKTabBar `textColor` fallback).
+- **TabBarFilter** — preserve ``FKTabBarFilterConfiguration/anchorPlacement`` when assigning a new ``configuration`` without placement (fixes mask/panel constrained to the strip host after playground toggles).
 
 ### Migration (0.1.x → 0.2.0)
 

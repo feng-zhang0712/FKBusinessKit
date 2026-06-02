@@ -5,6 +5,23 @@ import FKBusinessKit
 /// Example-only helpers on top of ``FKTabBarFilterHosting`` (debug logging).
 enum FKTabBarFilterExampleChrome {
   /// Optional console trace for ``FKTabBarFilterController/onSelection``.
+  /// Raises FKUIKit anchor presentation views above playground chrome (settings scroll view, placeholders).
+  @MainActor
+  static func bringAnchoredPresentationToFront(in rootView: UIView) {
+    var anchorHosts: [UIView] = []
+    collectAnchorHostViews(in: rootView, into: &anchorHosts)
+    anchorHosts.forEach { rootView.bringSubviewToFront($0) }
+  }
+
+  @MainActor
+  private static func collectAnchorHostViews(in view: UIView, into result: inout [UIView]) {
+    let typeName = String(describing: type(of: view))
+    if typeName.contains("FKAnchorHostView") {
+      result.append(view)
+    }
+    view.subviews.forEach { collectAnchorHostViews(in: $0, into: &result) }
+  }
+
   @MainActor
   static func debugPrintSelection(_ ctx: FKTabBarFilterSelectionContext<String>) {
     let section = ctx.sectionID.map(\.rawValue) ?? "—"
@@ -114,17 +131,56 @@ enum FKTabBarFilterExampleChrome {
   }
 
   @MainActor
-  static func installBodyPlaceholder(below stripBottom: NSLayoutYAxisAnchor, in parent: UIViewController) -> UIView {
+  @discardableResult
+  static func installBodyPlaceholder(
+    below stripBottom: NSLayoutYAxisAnchor,
+    in parent: UIViewController,
+    minimumHeight: CGFloat = 120,
+    placeholder: (title: String, subtitle: String)? = nil
+  ) -> UIView {
     let filler = UIView()
-    filler.backgroundColor = .systemBackground
+    filler.backgroundColor = .secondarySystemGroupedBackground
     filler.translatesAutoresizingMaskIntoConstraints = false
     parent.view.addSubview(filler)
-    NSLayoutConstraint.activate([
+
+    var constraints: [NSLayoutConstraint] = [
       filler.topAnchor.constraint(equalTo: stripBottom),
       filler.leadingAnchor.constraint(equalTo: parent.view.leadingAnchor),
       filler.trailingAnchor.constraint(equalTo: parent.view.trailingAnchor),
       filler.bottomAnchor.constraint(equalTo: parent.view.safeAreaLayoutGuide.bottomAnchor),
-    ])
+      filler.heightAnchor.constraint(greaterThanOrEqualToConstant: minimumHeight),
+    ]
+
+    if let placeholder {
+      let titleLabel = UILabel()
+      titleLabel.text = placeholder.title
+      titleLabel.font = .preferredFont(forTextStyle: .headline)
+      titleLabel.textColor = .secondaryLabel
+      titleLabel.textAlignment = .center
+      titleLabel.numberOfLines = 0
+
+      let subtitleLabel = UILabel()
+      subtitleLabel.text = placeholder.subtitle
+      subtitleLabel.font = .preferredFont(forTextStyle: .subheadline)
+      subtitleLabel.textColor = .tertiaryLabel
+      subtitleLabel.textAlignment = .center
+      subtitleLabel.numberOfLines = 0
+
+      let labels = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+      labels.axis = .vertical
+      labels.spacing = 6
+      labels.alignment = .center
+      labels.translatesAutoresizingMaskIntoConstraints = false
+      filler.addSubview(labels)
+      constraints += [
+        labels.centerXAnchor.constraint(equalTo: filler.centerXAnchor),
+        labels.centerYAnchor.constraint(equalTo: filler.centerYAnchor),
+        labels.leadingAnchor.constraint(greaterThanOrEqualTo: filler.leadingAnchor, constant: 24),
+        labels.trailingAnchor.constraint(lessThanOrEqualTo: filler.trailingAnchor, constant: -24),
+      ]
+    }
+
+    NSLayoutConstraint.activate(constraints)
     return filler
   }
 }

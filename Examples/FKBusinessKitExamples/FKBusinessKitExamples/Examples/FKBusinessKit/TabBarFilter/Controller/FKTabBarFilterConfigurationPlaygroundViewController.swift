@@ -3,6 +3,8 @@ import FKUIKit
 import FKBusinessKit
 
 /// Interactive demo for filter configuration: tab switching, caching, backdrop, hairline, and layout animation.
+///
+/// Chrome views are siblings of the anchored presentation host (never a full-screen stack on top of it).
 final class FKTabBarFilterConfigurationPlaygroundViewController: UIViewController {
   private enum TabSwitch: Int {
     case crossfade = 0
@@ -27,12 +29,14 @@ final class FKTabBarFilterConfigurationPlaygroundViewController: UIViewControlle
   private var filterHost: FKTabBarFilterController<String>!
   private var panelFactory: FKTabBarFilterPanelFactory!
 
+  private let scrollView = UIScrollView()
+  private let settingsStack: UIStackView
+  private var contentRegionView: UIView?
   private let tabSwitchSegment = UISegmentedControl(items: ["Crossfade", "Dismiss", "Slide ↓", "Slide ↑"])
   private let cacheSegment = UISegmentedControl(items: ["Per tab", "Recreate"])
   private let backdropSegment = UISegmentedControl(items: ["Default", "Strong", "Pass-through"])
   private let topHairlineSwitch = UISwitch()
   private let slowRelayoutSwitch = UISwitch()
-  private let controlsStack: UIStackView
 
   init() {
     tabSwitchSegment.selectedSegmentIndex = TabSwitch.crossfade.rawValue
@@ -40,33 +44,29 @@ final class FKTabBarFilterConfigurationPlaygroundViewController: UIViewControlle
     backdropSegment.selectedSegmentIndex = Backdrop.standard.rawValue
     topHairlineSwitch.isOn = true
 
-    tabSwitchSegment.translatesAutoresizingMaskIntoConstraints = false
-    cacheSegment.translatesAutoresizingMaskIntoConstraints = false
-    backdropSegment.translatesAutoresizingMaskIntoConstraints = false
-
-    controlsStack = FKTabBarFilterPlaygroundFormViews.makeControlsStack(arrangedSubviews: [
-      FKTabBarFilterPlaygroundFormViews.hintLabel(
-        "Expand a tab, then switch tabs or change Browse categories to compare behaviors. Collapse the panel before changing controls."
-      ),
-      FKTabBarFilterPlaygroundFormViews.sectionLabel("TAB SWITCHING"),
-      tabSwitchSegment,
-      FKTabBarFilterPlaygroundFormViews.sectionLabel("CONTENT CACHING"),
-      cacheSegment,
-      FKTabBarFilterPlaygroundFormViews.sectionLabel("BACKDROP"),
-      backdropSegment,
-      FKTabBarFilterPlaygroundFormViews.labeledSwitch(
-        title: "Top hairline above panel",
-        control: topHairlineSwitch,
-        target: nil,
-        action: #selector(configurationDidChange)
-      ),
-      FKTabBarFilterPlaygroundFormViews.labeledSwitch(
-        title: "Slow layout relayout",
-        control: slowRelayoutSwitch,
-        target: nil,
-        action: #selector(configurationDidChange)
-      ),
-    ])
+    settingsStack = FKTabBarFilterPlaygroundFormViews.makeControlsStack(
+      arrangedSubviews: [
+        FKTabBarFilterPlaygroundFormViews.hintLabel(
+          "Expand a tab to exercise backdrop and transitions. Changing a control collapses the panel and applies the new configuration."
+        ),
+        FKTabBarFilterPlaygroundFormViews.labeledSegment(title: "Tab switching", control: tabSwitchSegment),
+        FKTabBarFilterPlaygroundFormViews.labeledSegment(title: "Content caching", control: cacheSegment),
+        FKTabBarFilterPlaygroundFormViews.labeledSegment(title: "Backdrop", control: backdropSegment),
+        FKTabBarFilterPlaygroundFormViews.labeledSwitch(
+          title: "Top hairline above panel",
+          control: topHairlineSwitch,
+          target: nil,
+          action: #selector(configurationDidChange)
+        ),
+        FKTabBarFilterPlaygroundFormViews.labeledSwitch(
+          title: "Slow layout relayout",
+          control: slowRelayoutSwitch,
+          target: nil,
+          action: #selector(configurationDidChange)
+        ),
+      ],
+      spacing: 12
+    )
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -78,19 +78,120 @@ final class FKTabBarFilterConfigurationPlaygroundViewController: UIViewControlle
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "Configuration playground"
-    view.backgroundColor = .systemBackground
+    view.backgroundColor = .systemGroupedBackground
     navigationItem.largeTitleDisplayMode = .never
-
-    wireControlTargets()
-    view.addSubview(controlsStack)
-    NSLayoutConstraint.activate([
-      controlsStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
-      controlsStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-      controlsStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-    ])
+    navigationItem.rightBarButtonItems = [
+      UIBarButtonItem(title: "Open", style: .plain, target: self, action: #selector(didTapOpen)),
+      UIBarButtonItem(title: "Close", style: .plain, target: self, action: #selector(didTapClose)),
+    ]
 
     installFilterHost()
+    installChromeLayout()
+    wireControlTargets()
     filterHost.onSelection = { FKTabBarFilterExampleChrome.debugPrintSelection($0) }
+  }
+
+  private func installFilterHost() {
+    panelFactory = FKTabBarFilterExamplePanelFactoryBuilder.makeFactory(bindingTo: filterState)
+    var configuration = FKTabBarFilterExampleAppearance.makeFilterConfiguration(
+      anchored: buildFilterConfiguration()
+    )
+    attachPresentationCallbacks(to: &configuration)
+
+    filterHost = FKTabBarFilterController(
+      tabs: FKTabBarFilterEqualWidthTabSet.library.makeTabs(),
+      configuration: configuration,
+      panelFactory: panelFactory,
+      tabBarHost: tabStrip
+    )
+  }
+
+  private func installChromeLayout() {
+    guard let strip = FKTabBarFilterExampleChrome.embed(
+      filterHost: filterHost,
+      in: self,
+      topAnchor: view.safeAreaLayoutGuide.topAnchor,
+      overlayHost: view,
+      logSelection: false
+    ) else { return }
+
+    let contentRegion = UIView()
+    contentRegion.backgroundColor = .secondarySystemGroupedBackground
+    contentRegion.translatesAutoresizingMaskIntoConstraints = false
+    contentRegionView = contentRegion
+    installContentRegionLabels(in: contentRegion)
+    view.addSubview(contentRegion)
+
+    scrollView.translatesAutoresizingMaskIntoConstraints = false
+    scrollView.alwaysBounceVertical = true
+    scrollView.backgroundColor = .systemBackground
+    view.insertSubview(scrollView, belowSubview: strip)
+
+    settingsStack.translatesAutoresizingMaskIntoConstraints = false
+    scrollView.addSubview(settingsStack)
+
+    NSLayoutConstraint.activate([
+      contentRegion.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      contentRegion.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      contentRegion.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+      contentRegion.heightAnchor.constraint(equalToConstant: 148),
+
+      scrollView.topAnchor.constraint(equalTo: strip.bottomAnchor),
+      scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      scrollView.bottomAnchor.constraint(equalTo: contentRegion.topAnchor),
+
+      settingsStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 16),
+      settingsStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 16),
+      settingsStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -16),
+      settingsStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -16),
+      settingsStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -32),
+    ])
+
+    view.bringSubviewToFront(strip)
+  }
+
+  private func installContentRegionLabels(in contentRegion: UIView) {
+    let titleLabel = UILabel()
+    titleLabel.text = "Main content"
+    titleLabel.font = .preferredFont(forTextStyle: .headline)
+    titleLabel.textColor = .secondaryLabel
+    titleLabel.textAlignment = .center
+
+    let subtitleLabel = UILabel()
+    subtitleLabel.text = "Your list or feed lives here when the filter panel is collapsed."
+    subtitleLabel.font = .preferredFont(forTextStyle: .subheadline)
+    subtitleLabel.textColor = .tertiaryLabel
+    subtitleLabel.textAlignment = .center
+    subtitleLabel.numberOfLines = 0
+
+    let labels = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+    labels.axis = .vertical
+    labels.spacing = 6
+    labels.alignment = .center
+    labels.translatesAutoresizingMaskIntoConstraints = false
+    contentRegion.addSubview(labels)
+    NSLayoutConstraint.activate([
+      labels.centerXAnchor.constraint(equalTo: contentRegion.centerXAnchor),
+      labels.centerYAnchor.constraint(equalTo: contentRegion.centerYAnchor),
+      labels.leadingAnchor.constraint(greaterThanOrEqualTo: contentRegion.leadingAnchor, constant: 20),
+      labels.trailingAnchor.constraint(lessThanOrEqualTo: contentRegion.trailingAnchor, constant: -20),
+    ])
+  }
+
+  private func attachPresentationCallbacks(to configuration: inout FKTabBarFilterConfiguration<String>) {
+    var events = configuration.events
+    let priorDidExpand = events.onDidExpand
+    events.onDidExpand = { [weak self] tab in
+      priorDidExpand?(tab)
+      self?.bringFilterPresentationToFront()
+    }
+    configuration.events = events
+  }
+
+  /// Anchored presentation is added to ``view``; keep it above scroll/content chrome.
+  private func bringFilterPresentationToFront() {
+    FKTabBarFilterExampleChrome.bringAnchoredPresentationToFront(in: view)
   }
 
   private func wireControlTargets() {
@@ -104,32 +205,21 @@ final class FKTabBarFilterConfigurationPlaygroundViewController: UIViewControlle
   @objc private func configurationDidChange() {
     filterHost.collapsePanel(animated: false)
     panelFactory.wrapsPanelWithTopHairline = topHairlineSwitch.isOn
-    filterHost.configuration = FKTabBarFilterExampleAppearance.makeFilterConfiguration(
+    var configuration = FKTabBarFilterExampleAppearance.makeFilterConfiguration(
       anchored: buildFilterConfiguration()
     )
+    attachPresentationCallbacks(to: &configuration)
+    filterHost.configuration = configuration
+    filterHost.pinAnchoredPresentationOverlay(to: view)
     filterHost.invalidateAllCachedContent()
   }
 
-  private func installFilterHost() {
-    panelFactory = FKTabBarFilterExamplePanelFactoryBuilder.makeFactory(bindingTo: filterState)
-    filterHost = FKTabBarFilterController(
-      tabs: FKTabBarFilterEqualWidthTabSet.library.makeTabs(),
-      configuration: FKTabBarFilterExampleAppearance.makeFilterConfiguration(
-        anchored: buildFilterConfiguration()
-      ),
-      panelFactory: panelFactory,
-      tabBarHost: tabStrip
-    )
+  @objc private func didTapOpen() {
+    filterHost.expandPanel(for: "browse", animated: true)
+  }
 
-    guard let strip = FKTabBarFilterExampleChrome.embed(
-      filterHost: filterHost,
-      in: self,
-      topAnchor: controlsStack.bottomAnchor,
-      topConstant: 12,
-      overlayHost: view,
-      logSelection: false
-    ) else { return }
-    _ = FKTabBarFilterExampleChrome.installBodyPlaceholder(below: strip.bottomAnchor, in: self)
+  @objc private func didTapClose() {
+    filterHost.collapsePanel(animated: true)
   }
 
   private func buildFilterConfiguration() -> FKTabBarFilterConfiguration<String> {

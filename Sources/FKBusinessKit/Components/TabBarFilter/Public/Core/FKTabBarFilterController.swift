@@ -36,6 +36,12 @@ public final class FKTabBarFilterController<TabID: Hashable>: UIViewController {
 
   public var configuration: FKTabBarFilterConfiguration<TabID> {
     didSet {
+      if clearsAnchorPlacementOnNextConfigurationChange == false,
+         configuration.anchorPlacement == nil,
+         let previousPlacement = oldValue.anchorPlacement {
+        configuration.anchorPlacement = previousPlacement
+      }
+      clearsAnchorPlacementOnNextConfigurationChange = false
       applyConfiguration()
       refreshResolvedTabs()
     }
@@ -168,6 +174,7 @@ public final class FKTabBarFilterController<TabID: Hashable>: UIViewController {
 
   public func resetAnchorToDefault() {
     guard configuration.anchorPlacement != nil else { return }
+    clearsAnchorPlacementOnNextConfigurationChange = true
     var next = configuration
     next.anchorPlacement = nil
     configuration = next
@@ -214,6 +221,9 @@ public final class FKTabBarFilterController<TabID: Hashable>: UIViewController {
   }
 
   // MARK: - Internal (module)
+
+  /// When `false`, the next ``configuration`` assignment may copy ``FKTabBarFilterConfiguration/anchorPlacement`` from the previous value (see ``resetAnchorToDefault()``).
+  private var clearsAnchorPlacementOnNextConfigurationChange = false
 
   var filterTabs: [FKTabBarFilterTab<TabID>] = []
   let runtime = FKTabBarFilterRuntimeState<TabID>()
