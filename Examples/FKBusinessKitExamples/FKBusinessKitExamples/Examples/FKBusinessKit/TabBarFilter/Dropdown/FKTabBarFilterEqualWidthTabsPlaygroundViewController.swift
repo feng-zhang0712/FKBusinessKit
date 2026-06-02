@@ -55,7 +55,7 @@ final class FKTabBarFilterEqualWidthTabsPlaygroundViewController: UIViewControll
   }
 
   private func rebuildFilterHost() {
-    filterHost?.dropdownController.collapsePanel(animated: false)
+    filterHost?.collapsePanel(animated: false)
     filterHost?.willMove(toParent: nil)
     filterHost?.view.removeFromSuperview()
     filterHost?.removeFromParent()
@@ -68,7 +68,7 @@ final class FKTabBarFilterEqualWidthTabsPlaygroundViewController: UIViewControll
     filterHost = FKTabBarFilterController(
       tabs: dataset.makeTabs(),
       panelFactory: panelFactory,
-      filterConfiguration: FKTabBarFilterExampleAppearance.makeEqualThreeFilterConfiguration(),
+      configuration: FKTabBarFilterExampleAppearance.makeEqualThreeFilterConfiguration(),
       tabBarHost: tabStrip
     )
 

@@ -2,41 +2,36 @@ import UIKit
 import FKUIKit
 import FKBusinessKit
 
-/// Builds the sample ``FKTabBarFilterDropdownController`` and wires ``FKTabBarFilterDropdownConfiguration/Events`` to the demo log.
+/// Builds a sample ``FKTabBarFilterController`` with three custom panels and wires ``FKTabBarFilterConfiguration/Events`` to the demo log.
 enum FKTabBarFilterDropdownExampleFactory {
   static func makeController(
     tabBarHost: FKTabBarFilterTabBarHost,
     onLog: @escaping (String) -> Void
-  ) -> FKTabBarFilterDropdownController<FKTabBarFilterExampleTabID> {
-    let tabs: [FKTabBarFilterDropdownTab<FKTabBarFilterExampleTabID>] = [
-      .chevronTitle(
+  ) -> FKTabBarFilterController<FKTabBarFilterExampleTabID> {
+    let tabs: [FKTabBarFilterTab<FKTabBarFilterExampleTabID>] = [
+      FKTabBarFilterTab(
         id: .sort,
-        itemID: "sort",
         title: { "Sort" },
-        content: .viewController { FKTabBarFilterSortPanelExampleViewController() }
+        panelContent: .viewController { FKTabBarFilterSortPanelExampleViewController() }
       ),
-      .chevronTitle(
+      FKTabBarFilterTab(
         id: .filters,
-        itemID: "filters",
         title: { "Filters" },
         subtitle: { "3 selected" },
-        content: .viewController { FKTabBarFilterFiltersPanelExampleViewController() }
+        panelContent: .viewController { FKTabBarFilterFiltersPanelExampleViewController() }
       ),
-      .chevronTitle(
+      FKTabBarFilterTab(
         id: .search,
-        itemID: "search",
         title: { "Search" },
-        content: .viewController { FKTabBarFilterSearchPanelExampleViewController() }
+        panelContent: .viewController { FKTabBarFilterSearchPanelExampleViewController() }
       ),
     ]
 
-    var config = FKTabBarFilterDropdownConfiguration.default
-    config.applyTintOnlyChevronTabTypography()
-
-    config.presentationConfiguration.contentInsets = .init(top: 8, leading: 12, bottom: 12, trailing: 12)
-    config.presentationConfiguration.cornerRadius = 12
-
-    let events = FKTabBarFilterDropdownConfiguration.Events<FKTabBarFilterExampleTabID>(
+    var configuration = FKTabBarFilterConfiguration<FKTabBarFilterExampleTabID>()
+    configuration.applyTintOnlyChevronTabTypography()
+    configuration.presentationConfiguration.contentInsets = .init(top: 8, leading: 12, bottom: 12, trailing: 12)
+    configuration.presentationConfiguration.cornerRadius = 12
+    configuration.events = FKTabBarFilterConfiguration.Events(
       onStateChange: { state in onLog("state: \(state)") },
       onExpandedTabChange: { expanded in onLog("expandedTab: \(expanded?.rawValue ?? "nil")") },
       onWillExpand: { tab in onLog("onWillExpand: \(tab.rawValue)") },
@@ -47,14 +42,14 @@ enum FKTabBarFilterDropdownExampleFactory {
       onDidSwitchTab: { from, to in onLog("onDidSwitchTab: \(from.rawValue) → \(to.rawValue)") }
     )
 
-    let vc = FKTabBarFilterDropdownController<FKTabBarFilterExampleTabID>(
+    let factory = FKTabBarFilterPanelFactory(sourcesByPanelKind: [:], loadingTitle: FKTabBarFilterExampleAppearance.panelLoadingTitle)
+    let controller = FKTabBarFilterController(
       tabs: tabs,
-      tabBarHost: tabBarHost,
-      configuration: config,
-      events: events
+      panelFactory: factory,
+      configuration: configuration,
+      tabBarHost: tabBarHost
     )
-
-    vc.selectTab(.filters, animated: false)
-    return vc
+    controller.selectTab(.filters, animated: false)
+    return controller
   }
 }

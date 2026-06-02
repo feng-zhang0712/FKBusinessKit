@@ -24,7 +24,7 @@ enum FKTabBarFilterAnchorZone: String, CaseIterable {
     }
   }
 
-  /// ``FKTabBarFilterDropdownController/updateAnchorPlacement`` values for this zone.
+  /// ``FKTabBarFilterController/updateAnchorPlacement`` values for this zone.
   var anchorGeometry: FKTabBarFilterAnchorZone.Geometry {
     switch self {
     case .navigationBar, .screenTop:
@@ -56,9 +56,9 @@ enum FKTabBarFilterAnchorZone: String, CaseIterable {
     let widthPolicy: FKAnchor.WidthPolicy
   }
 
-  func applyAnchorGeometry<TabID: Hashable>(to dropdown: FKTabBarFilterDropdownController<TabID>) {
+  func applyAnchorGeometry<TabID: Hashable>(to filter: FKTabBarFilterController<TabID>) {
     let geometry = anchorGeometry
-    dropdown.updateAnchorPlacement(
+    filter.updateAnchorPlacement(
       attachmentEdge: geometry.attachmentEdge,
       expansionDirection: geometry.expansionDirection,
       horizontalAlignment: geometry.horizontalAlignment,
@@ -68,13 +68,13 @@ enum FKTabBarFilterAnchorZone: String, CaseIterable {
 
   /// Shell extends to the physical edge; panel content is inset for the window safe area. No container blur.
   func applyZonePresentationConfiguration<TabID: Hashable>(
-    to dropdown: FKTabBarFilterDropdownController<TabID>,
+    to filter: FKTabBarFilterController<TabID>,
     in viewController: UIViewController
   ) {
     guard let window = FKTabBarFilterAnchorZoneInstaller.presentationWindow(for: viewController) else { return }
     let safe = window.safeAreaInsets
 
-    var config = dropdown.configuration
+    var config = filter.configuration
     config.presentationConfiguration.containerBlur = .init()
     config.presentationConfiguration.safeAreaPolicy = .contentRespectsSafeArea
 
@@ -88,7 +88,7 @@ enum FKTabBarFilterAnchorZone: String, CaseIterable {
       contentInsets.bottom = max(contentInsets.bottom, safe.bottom)
     }
     config.presentationConfiguration.contentInsets = contentInsets
-    dropdown.configuration = config
+    filter.configuration = config
   }
 
   var filterHint: String {

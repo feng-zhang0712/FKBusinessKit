@@ -1,7 +1,7 @@
 import UIKit
 import FKUIKit
 
-/// Common layout steps when placing ``FKTabBarFilterController`` under a navigation or safe-area region and pinning dropdown presentation to a larger host (e.g. the screen root).
+/// Common layout steps when placing ``FKTabBarFilterController`` under a navigation or safe-area region and pinning anchored presentation to a larger host (e.g. the screen root).
 ///
 /// Typical pattern: embed the strip, then add a full-width filler view below it for your main content.
 public enum FKTabBarFilterHosting {
@@ -32,7 +32,7 @@ public enum FKTabBarFilterHosting {
     filter.didMove(toParent: parent)
     if useCompactTabButtonInsets {
       Self.applyCompactTabButtonInsets(
-        to: filter.dropdownController.tabBar,
+        to: filter.tabBar,
         horizontalInset: compactHorizontalInset,
         verticalInset: compactVerticalInset
       )

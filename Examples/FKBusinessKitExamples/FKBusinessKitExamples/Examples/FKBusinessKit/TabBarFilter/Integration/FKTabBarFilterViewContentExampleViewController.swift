@@ -2,23 +2,22 @@ import UIKit
 import FKUIKit
 import FKBusinessKit
 
-/// ``FKTabBarFilterDropdownTab/Content/view`` hosting (no dedicated child view controller per tab).
+/// ``FKTabBarFilterTabPanelContent/view`` hosting (no dedicated child view controller per tab).
 final class FKTabBarFilterViewContentExampleViewController: UIViewController {
   private let logView = FKTabBarFilterExampleLogHelpers.makeCallbackLogTextView()
   private let host = FKTabBarFilterTabBarHostView()
-  private lazy var dropdown: FKTabBarFilterDropdownController<FKTabBarFilterExampleTabID> = {
-    let tabs: [FKTabBarFilterDropdownTab<FKTabBarFilterExampleTabID>] = [
-      .chevronTitle(
+  private lazy var filter: FKTabBarFilterController<FKTabBarFilterExampleTabID> = {
+    let tabs: [FKTabBarFilterTab<FKTabBarFilterExampleTabID>] = [
+      FKTabBarFilterTab(
         id: .filters,
-        itemID: "filters",
         title: { "UIView" },
         subtitle: { "Lightweight host" },
-        content: .view {
+        panelContent: .view {
           let container = UIView()
           container.backgroundColor = UIColor.systemTeal.withAlphaComponent(0.12)
 
           let label = UILabel()
-          label.text = "Content from Content.view — FKTabBarFilterViewWrappingController"
+          label.text = "Content from panelContent.view — FKTabBarFilterViewWrappingController"
           label.font = .preferredFont(forTextStyle: .body)
           label.textColor = .label
           label.numberOfLines = 0
@@ -34,26 +33,27 @@ final class FKTabBarFilterViewContentExampleViewController: UIViewController {
           return container
         }
       ),
-      .chevronTitle(
+      FKTabBarFilterTab(
         id: .sort,
-        itemID: "sort",
         title: { "View controller" },
-        content: .viewController { FKTabBarFilterSortPanelExampleViewController() }
+        panelContent: .viewController { FKTabBarFilterSortPanelExampleViewController() }
       ),
     ]
 
-    var config = FKTabBarFilterDropdownConfiguration.default
-    config.applyTintOnlyChevronTabTypography()
+    var configuration = FKTabBarFilterConfiguration<FKTabBarFilterExampleTabID>()
+    configuration.applyTintOnlyChevronTabTypography()
+    configuration.events = FKTabBarFilterConfiguration.Events(
+      onExpandedTabChange: { [weak self] expanded in
+        self?.appendLog("expandedTab: \(expanded?.rawValue ?? "nil")")
+      }
+    )
 
-    return FKTabBarFilterDropdownController(
+    let factory = FKTabBarFilterPanelFactory(sourcesByPanelKind: [:], loadingTitle: FKTabBarFilterExampleAppearance.panelLoadingTitle)
+    return FKTabBarFilterController(
       tabs: tabs,
-      tabBarHost: host,
-      configuration: config,
-      events: FKTabBarFilterDropdownConfiguration.Events(
-        onExpandedTabChange: { [weak self] expanded in
-          self?.appendLog("expandedTab: \(expanded?.rawValue ?? "nil")")
-        }
-      )
+      panelFactory: factory,
+      configuration: configuration,
+      tabBarHost: host
     )
   }()
 
@@ -61,9 +61,9 @@ final class FKTabBarFilterViewContentExampleViewController: UIViewController {
     super.viewDidLoad()
     title = "UIView content"
     view.backgroundColor = .systemBackground
-    dropdown.embed(in: self)
-    FKTabBarFilterExampleLogHelpers.installLogView(logView, in: view, below: dropdown.view)
-    appendLog("Compare Content.view vs Content.viewController on the same strip.")
+    filter.embed(in: self)
+    FKTabBarFilterExampleLogHelpers.installLogView(logView, in: view, below: filter.view)
+    appendLog("Compare panelContent.view vs panelContent.viewController on the same strip.")
   }
 
   private func appendLog(_ text: String) {

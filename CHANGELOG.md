@@ -7,11 +7,12 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 ### Changed
 
 - Raise minimum FKKit dependency to `0.59.1` (`Package.swift`, `FKBusinessKit.podspec`, README).
+- **TabBarFilter** — merge ``FKTabBarFilterDropdownController`` into ``FKTabBarFilterController`` (single public VC). ``FKTabBarFilterConfiguration`` now holds tab bar, presentation, anchor, caching, and ``events`` directly; ``FKTabBarFilterDropdownConfiguration`` removed. ``FKTabBarFilterDropdownController`` is a deprecated typealias.
 
 ### Fixed
 
 - **TabBarFilter** — `chevronTitle` uses ``FKTabBarItem/accessoryIcon`` so filter chevrons render on FKUIKit 0.59+.
-- **TabBarFilter** — ``FKTabBarFilterDropdownController`` rotates chevron accessories 180° on expand/collapse (FKKit filter-strip preset).
+- **TabBarFilter** — ``FKTabBarFilterController`` rotates chevron accessories 180° on expand/collapse (FKKit filter-strip preset).
 - **TabBarFilter** — chevron accessory tint follows title highlight when chevron/title colors match (FKTabBar `textColor` fallback).
 
 ## [0.1.2] - 2026-06-02

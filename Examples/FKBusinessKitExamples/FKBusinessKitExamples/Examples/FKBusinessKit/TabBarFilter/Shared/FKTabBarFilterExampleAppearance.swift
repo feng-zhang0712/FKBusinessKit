@@ -49,23 +49,21 @@ enum FKTabBarFilterExampleAppearance {
 
   /// ``FKTabBarFilterController`` defaults for the six-tab hub example.
   static func makeHubFilterConfiguration() -> FKTabBarFilterConfiguration<String> {
-    FKTabBarFilterConfiguration(
-      dropdownConfiguration: hubAnchoredConfiguration(),
-      defaultTabStrip: filterTabStrip
-    )
+    var cfg = hubAnchoredBase()
+    cfg.defaultTabStrip = filterTabStrip
+    return cfg
   }
 
   /// ``FKTabBarFilterController`` defaults for equal-width tab examples.
   static func makeEqualThreeFilterConfiguration() -> FKTabBarFilterConfiguration<String> {
-    FKTabBarFilterConfiguration(
-      dropdownConfiguration: equalThreeAnchoredConfiguration(),
-      defaultTabStrip: filterTabStrip
-    )
+    var cfg = equalThreeAnchoredBase()
+    cfg.defaultTabStrip = filterTabStrip
+    return cfg
   }
 
   /// Six-tab hub: intrinsic tab widths (horizontal scroll), so long titles are not clipped.
-  static func hubAnchoredConfiguration() -> FKTabBarFilterDropdownConfiguration {
-    var cfg = FKTabBarFilterDropdownConfiguration.default
+  private static func hubAnchoredBase() -> FKTabBarFilterConfiguration<String> {
+    var cfg = FKTabBarFilterConfiguration<String>()
     cfg.tabBarConfiguration.layout.isScrollable = true
     cfg.tabBarConfiguration.layout.widthMode = .intrinsic
     cfg.tabBarConfiguration.layout.itemSpacing = 4
@@ -76,8 +74,8 @@ enum FKTabBarFilterExampleAppearance {
   }
 
   /// Three tabs: equal width, no horizontal scroll.
-  static func equalThreeAnchoredConfiguration() -> FKTabBarFilterDropdownConfiguration {
-    var cfg = FKTabBarFilterDropdownConfiguration.default
+  private static func equalThreeAnchoredBase() -> FKTabBarFilterConfiguration<String> {
+    var cfg = FKTabBarFilterConfiguration<String>()
     cfg.tabBarConfiguration.layout.isScrollable = false
     cfg.tabBarConfiguration.layout.widthMode = .fillEqually
     cfg.tabBarConfiguration.layout.itemSpacing = 0
@@ -86,74 +84,71 @@ enum FKTabBarFilterExampleAppearance {
     return cfg
   }
 
-  // MARK: - Anchored dropdown variants (dropdown examples)
-
-  static func makeFilterConfiguration(anchored: FKTabBarFilterDropdownConfiguration) -> FKTabBarFilterConfiguration<String> {
-    FKTabBarFilterConfiguration(
-      dropdownConfiguration: anchored,
-      defaultTabStrip: filterTabStrip
-    )
+  static func makeFilterConfiguration(anchored: FKTabBarFilterConfiguration<String>) -> FKTabBarFilterConfiguration<String> {
+    var cfg = anchored
+    cfg.defaultTabStrip = filterTabStrip
+    return cfg
   }
 
-  /// Same tab strip as equal-three, but each tab switch dismisses and re-presents the panel shell.
-  static func equalThreeDismissThenPresent() -> FKTabBarFilterDropdownConfiguration {
-    var cfg = equalThreeAnchoredConfiguration()
+  static func equalThreeDismissThenPresent() -> FKTabBarFilterConfiguration<String> {
+    var cfg = equalThreeAnchoredBase()
     cfg.anchorReplacementPolicy = .dismissThenPresent(dismissAnimated: true, presentAnimated: true)
+    cfg.defaultTabStrip = filterTabStrip
     return cfg
   }
 
-  /// Vertical slide upward when swapping tabs in place.
-  static func equalThreeSlideUpSwitch() -> FKTabBarFilterDropdownConfiguration {
-    var cfg = equalThreeAnchoredConfiguration()
+  static func equalThreeSlideUpSwitch() -> FKTabBarFilterConfiguration<String> {
+    var cfg = equalThreeAnchoredBase()
     cfg.anchorReplacementPolicy = .replaceInPlace(contentTransition: .slideVertical(direction: .up, duration: 0.22))
+    cfg.defaultTabStrip = filterTabStrip
     return cfg
   }
 
-  /// Default per-tab cache (contrast with ``equalThreeRecreateContent()``).
-  static func equalThreeCachePerTab() -> FKTabBarFilterDropdownConfiguration {
-    var cfg = equalThreeAnchoredConfiguration()
+  static func equalThreeCachePerTab() -> FKTabBarFilterConfiguration<String> {
+    var cfg = equalThreeAnchoredBase()
     cfg.contentCachingPolicy = .cachePerTab
+    cfg.defaultTabStrip = filterTabStrip
     return cfg
   }
 
-  /// Vertical slide downward when swapping tabs in place.
-  static func equalThreeSlideVerticalSwitch() -> FKTabBarFilterDropdownConfiguration {
-    var cfg = equalThreeAnchoredConfiguration()
+  static func equalThreeSlideVerticalSwitch() -> FKTabBarFilterConfiguration<String> {
+    var cfg = equalThreeAnchoredBase()
     cfg.anchorReplacementPolicy = .replaceInPlace(contentTransition: .slideVertical(direction: .down, duration: 0.22))
+    cfg.defaultTabStrip = filterTabStrip
     return cfg
   }
 
-  /// Darker dimming behind the anchored panel.
-  static func equalThreeStrongBackdrop() -> FKTabBarFilterDropdownConfiguration {
-    var cfg = equalThreeAnchoredConfiguration()
+  static func equalThreeStrongBackdrop() -> FKTabBarFilterConfiguration<String> {
+    var cfg = equalThreeAnchoredBase()
     cfg.presentationConfiguration.backdropStyle = .dim(alpha: 0.52)
+    cfg.defaultTabStrip = filterTabStrip
     return cfg
   }
 
-  /// Invisible dim + passthrough hits on the presenting screen (see ``FKSheetPresentationConfiguration/ZeroDimBackdropBehavior``).
-  static func equalThreePassthroughBackdrop() -> FKTabBarFilterDropdownConfiguration {
-    var cfg = equalThreeAnchoredConfiguration()
+  static func equalThreePassthroughBackdrop() -> FKTabBarFilterConfiguration<String> {
+    var cfg = equalThreeAnchoredBase()
     cfg.presentationConfiguration.backdropStyle = .dim(alpha: 0)
     cfg.presentationConfiguration.zeroDimBackdropBehavior = .passthrough
     cfg.presentationConfiguration.backgroundInteraction = .init(isEnabled: true, showsBackdropWhenEnabled: false)
+    cfg.defaultTabStrip = filterTabStrip
     return cfg
   }
 
-  /// Rebuilds panel view controllers whenever a tab is opened (no per-tab cache).
-  static func equalThreeRecreateContent() -> FKTabBarFilterDropdownConfiguration {
-    var cfg = equalThreeAnchoredConfiguration()
+  static func equalThreeRecreateContent() -> FKTabBarFilterConfiguration<String> {
+    var cfg = equalThreeAnchoredBase()
     cfg.contentCachingPolicy = .recreate
+    cfg.defaultTabStrip = filterTabStrip
     return cfg
   }
 
-  /// Slower anchor relayout when ``preferredContentSize`` changes (e.g. two-column panels).
-  static func equalThreeSlowLayoutAnimation() -> FKTabBarFilterDropdownConfiguration {
-    var cfg = equalThreeAnchoredConfiguration()
+  static func equalThreeSlowLayoutAnimation() -> FKTabBarFilterConfiguration<String> {
+    var cfg = equalThreeAnchoredBase()
     cfg.anchorReplacementPolicy = .replaceInPlace(
       contentTransition: .crossfade(duration: 0.18),
       animateLayout: true,
       layoutAnimationDuration: 0.42
     )
+    cfg.defaultTabStrip = filterTabStrip
     return cfg
   }
 }

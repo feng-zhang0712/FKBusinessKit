@@ -18,7 +18,7 @@ final class FKTabBarFilterAnchorZonesPlaygroundViewController: UIViewController 
   private let tabStrip = FKTabBarFilterExampleTabStripView()
   private let filterState = FKTabBarFilterExampleState.presetEqualKnowledge()
   private var filterHost: FKTabBarFilterController<String>?
-  private var dropdown: FKTabBarFilterDropdownController<FKTabBarFilterExampleTabID>?
+  private var filter: FKTabBarFilterController<FKTabBarFilterExampleTabID>?
   private var anchorHost: FKTabBarFilterZoneAnchorHostView?
   private let embedContainer = UIView()
   private var zoneInstallation: FKTabBarFilterAnchorZoneInstaller.Installation?
@@ -131,18 +131,18 @@ final class FKTabBarFilterAnchorZonesPlaygroundViewController: UIViewController 
     NSLayoutConstraint.deactivate(logConstraints)
     logConstraints.removeAll()
 
-    filterHost?.dropdownController.collapsePanel(animated: false)
-    dropdown?.collapsePanel(animated: false)
+    filterHost?.collapsePanel(animated: false)
+    filter?.collapsePanel(animated: false)
 
     filterHost?.willMove(toParent: nil)
     filterHost?.view.removeFromSuperview()
     filterHost?.removeFromParent()
     filterHost = nil
 
-    dropdown?.willMove(toParent: nil)
-    dropdown?.view.removeFromSuperview()
-    dropdown?.removeFromParent()
-    dropdown = nil
+    filter?.willMove(toParent: nil)
+    filter?.view.removeFromSuperview()
+    filter?.removeFromParent()
+    filter = nil
     anchorHost = nil
 
     chromeViews.forEach { $0.removeFromSuperview() }
@@ -173,7 +173,7 @@ final class FKTabBarFilterAnchorZonesPlaygroundViewController: UIViewController 
         .init(id: "sort", panelKind: .singleList, title: "Sort"),
       ],
       panelFactory: panelFactory,
-      filterConfiguration: FKTabBarFilterExampleAppearance.makeEqualThreeFilterConfiguration(),
+      configuration: FKTabBarFilterExampleAppearance.makeEqualThreeFilterConfiguration(),
       tabBarHost: tabStrip
     )
     filterHost = host
@@ -223,7 +223,7 @@ final class FKTabBarFilterAnchorZonesPlaygroundViewController: UIViewController 
     let controller = FKTabBarFilterDropdownExampleFactory.makeController(tabBarHost: host) { [weak self] line in
       self?.appendLog(line)
     }
-    dropdown = controller
+    filter = controller
     controller.embed(in: self, pinTo: embedContainer)
 
     navigationItem.rightBarButtonItems = [
@@ -241,14 +241,14 @@ final class FKTabBarFilterAnchorZonesPlaygroundViewController: UIViewController 
     switch currentMode() {
     case .filterStrip:
       guard let filterHost else { return }
-      filterHost.dropdownController.applyZoneInstallation(installation)
-      zone.applyAnchorGeometry(to: filterHost.dropdownController)
-      zone.applyZonePresentationConfiguration(to: filterHost.dropdownController, in: self)
+      filterHost.applyAnchorInstallation(installation.filterAnchorInstallation)
+      zone.applyAnchorGeometry(to: filterHost)
+      zone.applyZonePresentationConfiguration(to: filterHost, in: self)
     case .customAnchor:
-      guard let dropdown else { return }
-      dropdown.applyZoneInstallation(installation)
-      zone.applyAnchorGeometry(to: dropdown)
-      zone.applyZonePresentationConfiguration(to: dropdown, in: self)
+      guard let filter else { return }
+      filter.applyAnchorInstallation(installation.filterAnchorInstallation)
+      zone.applyAnchorGeometry(to: filter)
+      zone.applyZonePresentationConfiguration(to: filter, in: self)
     }
   }
 
@@ -257,11 +257,11 @@ final class FKTabBarFilterAnchorZonesPlaygroundViewController: UIViewController 
   }
 
   @objc private func didTapOpen() {
-    dropdown?.expandPanel(for: .filters, animated: true)
+    filter?.expandPanel(for: .filters, animated: true)
   }
 
   @objc private func didTapClose() {
-    dropdown?.collapsePanel(animated: true)
+    filter?.collapsePanel(animated: true)
   }
 }
 

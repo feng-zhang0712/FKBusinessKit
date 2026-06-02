@@ -9,7 +9,7 @@ import FKBusinessKit
 final class FKTabBarFilterTabBarAnchorExampleViewController: UIViewController {
   private let logView = FKTabBarFilterExampleLogHelpers.makeCallbackLogTextView()
   private let host = FKTabBarFilterTabBarHostView()
-  private lazy var dropdown: FKTabBarFilterDropdownController<FKTabBarFilterExampleTabID> = {
+  private lazy var filter: FKTabBarFilterController<FKTabBarFilterExampleTabID> = {
     FKTabBarFilterDropdownExampleFactory.makeController(tabBarHost: host) { [weak self] line in
       self?.appendLog(line)
     }
@@ -39,11 +39,11 @@ final class FKTabBarFilterTabBarAnchorExampleViewController: UIViewController {
   }
 
   private func setupChild() {
-    dropdown.embed(in: self)
+    filter.embed(in: self)
   }
 
   private func setupLogView() {
-    FKTabBarFilterExampleLogHelpers.installLogView(logView, in: view, below: dropdown.view)
+    FKTabBarFilterExampleLogHelpers.installLogView(logView, in: view, below: filter.view)
   }
 
   private func appendLog(_ text: String) {
@@ -51,20 +51,20 @@ final class FKTabBarFilterTabBarAnchorExampleViewController: UIViewController {
   }
 
   @objc private func didTapOpenFilters() {
-    dropdown.expandPanel(for: .filters, animated: true)
+    filter.expandPanel(for: .filters, animated: true)
   }
 
   @objc private func didTapClose() {
-    dropdown.collapsePanel(animated: true)
+    filter.collapsePanel(animated: true)
   }
 
   @objc private func didChangeAnimationStyle() {
     switch animationControl.selectedSegmentIndex {
     case 0:
-      dropdown.configuration.anchorReplacementPolicy = .replaceInPlace(contentTransition: .crossfade(duration: 0.18))
+      filter.configuration.anchorReplacementPolicy = .replaceInPlace(contentTransition: .crossfade(duration: 0.18))
       appendLog("anchorReplacementPolicy = replaceInPlace(crossfade)")
     default:
-      dropdown.configuration.anchorReplacementPolicy = .dismissThenPresent(dismissAnimated: false, presentAnimated: true)
+      filter.configuration.anchorReplacementPolicy = .dismissThenPresent(dismissAnimated: false, presentAnimated: true)
       appendLog("anchorReplacementPolicy = dismissThenPresent")
     }
   }

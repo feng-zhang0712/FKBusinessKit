@@ -102,7 +102,7 @@ final class FKTabBarFilterConfigurationPlaygroundViewController: UIViewControlle
   }
 
   @objc private func configurationDidChange() {
-    filterHost.dropdownController.collapsePanel(animated: false)
+    filterHost.collapsePanel(animated: false)
     panelFactory.wrapsPanelWithTopHairline = topHairlineSwitch.isOn
     filterHost.setFilterConfiguration(
       FKTabBarFilterExampleAppearance.makeFilterConfiguration(anchored: buildDropdownConfiguration())
@@ -115,7 +115,7 @@ final class FKTabBarFilterConfigurationPlaygroundViewController: UIViewControlle
     filterHost = FKTabBarFilterController(
       tabs: FKTabBarFilterEqualWidthTabSet.library.makeTabs(),
       panelFactory: panelFactory,
-      filterConfiguration: FKTabBarFilterExampleAppearance.makeFilterConfiguration(
+      configuration: FKTabBarFilterExampleAppearance.makeFilterConfiguration(
         anchored: buildDropdownConfiguration()
       ),
       tabBarHost: tabStrip
@@ -132,11 +132,11 @@ final class FKTabBarFilterConfigurationPlaygroundViewController: UIViewControlle
     _ = FKTabBarFilterExampleChrome.installBodyPlaceholder(below: strip.bottomAnchor, in: self)
   }
 
-  private func buildDropdownConfiguration() -> FKTabBarFilterDropdownConfiguration {
-    var cfg: FKTabBarFilterDropdownConfiguration = {
+  private func buildDropdownConfiguration() -> FKTabBarFilterConfiguration<String> {
+    var cfg: FKTabBarFilterConfiguration<String> = {
       switch Backdrop(rawValue: backdropSegment.selectedSegmentIndex) ?? .standard {
       case .standard:
-        return FKTabBarFilterExampleAppearance.equalThreeAnchoredConfiguration()
+        return FKTabBarFilterExampleAppearance.makeEqualThreeFilterConfiguration()
       case .strongDim:
         return FKTabBarFilterExampleAppearance.equalThreeStrongBackdrop()
       case .passthrough:

@@ -102,7 +102,7 @@ enum FKTabBarFilterExampleChrome {
 
     filterHost.didMove(toParent: parent)
     FKTabBarFilterHosting.applyCompactTabButtonInsets(
-      to: filterHost.dropdownController.tabBar,
+      to: filterHost.tabBar,
       horizontalInset: 4,
       verticalInset: 6
     )

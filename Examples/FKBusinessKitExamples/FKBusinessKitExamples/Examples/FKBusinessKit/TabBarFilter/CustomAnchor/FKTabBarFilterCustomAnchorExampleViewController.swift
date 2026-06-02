@@ -12,7 +12,7 @@ final class FKTabBarFilterCustomAnchorExampleViewController: UIViewController {
   private let childContainer = UIView()
   private let expansionControl = UISegmentedControl(items: ["Expand down", "Expand up"])
   private let alignmentControl = UISegmentedControl(items: ["Fill width", "Center · match anchor"])
-  private lazy var dropdown: FKTabBarFilterDropdownController<FKTabBarFilterExampleTabID> = {
+  private lazy var filter: FKTabBarFilterController<FKTabBarFilterExampleTabID> = {
     FKTabBarFilterDropdownExampleFactory.makeController(tabBarHost: host) { [weak self] line in
       self?.appendLog(line)
     }
@@ -69,7 +69,7 @@ final class FKTabBarFilterCustomAnchorExampleViewController: UIViewController {
       childContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
       childContainer.heightAnchor.constraint(equalToConstant: 120),
     ])
-    dropdown.embed(in: self, pinTo: childContainer)
+    filter.embed(in: self, pinTo: childContainer)
   }
 
   private func setupLogView() {
@@ -77,7 +77,7 @@ final class FKTabBarFilterCustomAnchorExampleViewController: UIViewController {
   }
 
   private func applyCustomAnchor() {
-    dropdown.setAnchor(source: host.anchorControl, overlayHost: view)
+    filter.setAnchor(source: host.anchorControl, overlayHost: view)
   }
 
   private func appendLog(_ text: String) {
@@ -87,31 +87,31 @@ final class FKTabBarFilterCustomAnchorExampleViewController: UIViewController {
   @objc private func didChangeGeometry() {
     switch expansionControl.selectedSegmentIndex {
     case 1:
-      dropdown.updateAnchorPlacement(attachmentEdge: .top, expansionDirection: .up)
+      filter.updateAnchorPlacement(attachmentEdge: .top, expansionDirection: .up)
       appendLog("geometry: edge=top direction=up")
     default:
-      dropdown.updateAnchorPlacement(attachmentEdge: .bottom, expansionDirection: .down)
+      filter.updateAnchorPlacement(attachmentEdge: .bottom, expansionDirection: .down)
       appendLog("geometry: edge=bottom direction=down")
     }
     switch alignmentControl.selectedSegmentIndex {
     case 1:
-      dropdown.updateAnchorPlacement(horizontalAlignment: .center, widthPolicy: .matchAnchor)
+      filter.updateAnchorPlacement(horizontalAlignment: .center, widthPolicy: .matchAnchor)
       appendLog("geometry: alignment=center width=matchAnchor")
     default:
-      dropdown.updateAnchorPlacement(horizontalAlignment: .fill, widthPolicy: .matchContainer)
+      filter.updateAnchorPlacement(horizontalAlignment: .fill, widthPolicy: .matchContainer)
       appendLog("geometry: alignment=fill width=matchContainer")
     }
   }
 
   @objc private func didTapAnchorControl() {
-    dropdown.togglePanel(for: .filters, animated: true)
+    filter.togglePanel(for: .filters, animated: true)
   }
 
   @objc private func didTapOpenFilters() {
-    dropdown.expandPanel(for: .filters, animated: true)
+    filter.expandPanel(for: .filters, animated: true)
   }
 
   @objc private func didTapClose() {
-    dropdown.collapsePanel(animated: true)
+    filter.collapsePanel(animated: true)
   }
 }

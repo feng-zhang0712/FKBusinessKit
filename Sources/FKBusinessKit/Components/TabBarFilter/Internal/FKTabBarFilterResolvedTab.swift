@@ -1,55 +1,27 @@
 import UIKit
 import FKUIKit
 
-/// A tab descriptor for `FKTabBarFilterDropdownController`.
-public struct FKTabBarFilterDropdownTab<TabID: Hashable> {
-  /// Snapshot used when building tab UI and content.
-  public struct StateSnapshot: Equatable {
-    /// Currently expanded tab (if any).
-    public var expandedTab: TabID?
+/// Internal tab descriptor used to build ``FKTabBar`` items and panel content.
+struct FKTabBarFilterResolvedTab<TabID: Hashable> {
+  struct StateSnapshot: Equatable {
+    var expandedTab: TabID?
 
-    public init(expandedTab: TabID?) {
+    init(expandedTab: TabID?) {
       self.expandedTab = expandedTab
     }
   }
 
-  /// Content descriptor.
-  public enum Content {
-    /// Provide a view controller directly.
+  enum PanelContent {
     case viewController(() -> UIViewController)
-    /// Provide a view and wrap it in a lightweight hosting controller.
     case view(() -> UIView)
   }
 
-  /// Unique identifier for this tab.
-  public let id: TabID
-  /// Builds the `FKTabBarItem` used by `FKTabBar`.
-  ///
-  /// - Important: You are expected to reflect `snapshot.expandedTab` in title emphasis when using
-  ///   ``chevronTitle``; chevron rotation is applied by ``FKTabBarFilterDropdownController`` via
-  ///   ``FKTabBar/visibleItemAccessoryView(at:)``.
-  public var makeTabBarItem: (_ snapshot: StateSnapshot) -> FKTabBarItem
-  /// Provides the dropdown content for this tab.
-  public var content: Content
-
-  public init(
-    id: TabID,
-    makeTabBarItem: @escaping (_ snapshot: StateSnapshot) -> FKTabBarItem,
-    content: Content
-  ) {
-    self.id = id
-    self.makeTabBarItem = makeTabBarItem
-    self.content = content
-  }
+  let id: TabID
+  var makeTabBarItem: (_ snapshot: StateSnapshot) -> FKTabBarItem
+  var content: PanelContent
 }
 
-public extension FKTabBarFilterDropdownTab {
-  /// A lightweight default tab builder using a title + trailing `chevron.down` accessory.
-  ///
-  /// ``FKTabBarFilterDropdownController`` rotates the accessory 180° while the tab is expanded (filter-strip preset behavior).
-  ///
-  /// When ``normalChevronColor`` / ``expandedChevronColor`` match the corresponding title colors (defaults),
-  /// the chevron tint follows ``FKTabBar`` title emphasis at layout time.
+extension FKTabBarFilterResolvedTab {
   static func chevronTitle(
     id: TabID,
     itemID: String? = nil,
@@ -64,9 +36,9 @@ public extension FKTabBarFilterDropdownTab {
     chevronSize: CGSize = .init(width: 14, height: 14),
     chevronSpacing: CGFloat = 4,
     titleSubtitleSpacing: CGFloat = 2,
-    content: Content
+    content: PanelContent
   ) -> Self {
-    FKTabBarFilterDropdownTab(
+    FKTabBarFilterResolvedTab(
       id: id,
       makeTabBarItem: { snapshot in
         let isExpanded = snapshot.expandedTab == id
@@ -121,7 +93,6 @@ public extension FKTabBarFilterDropdownTab {
     )
   }
 
-  /// Chevron tint follows the tab title color when chevron/title colors match; otherwise uses an explicit accessory tint.
   private static func makeChevronAccessoryIcon(
     isExpanded: Bool,
     chevronSize: CGSize,

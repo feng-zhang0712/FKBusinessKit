@@ -16,6 +16,14 @@ enum FKTabBarFilterAnchorZoneInstaller {
     let hostStrategy: FKAnchorConfiguration.HostStrategy
     /// Ephemeral geometry helper pinned to a screen edge; `nil` when `sourceView` is the anchor (navigation bar).
     let edgeMarker: UIView?
+
+    var filterAnchorInstallation: FKTabBarFilterAnchorInstallation {
+      FKTabBarFilterAnchorInstallation(
+        sourceView: sourceView,
+        overlayHost: overlayHost,
+        hostStrategy: hostStrategy
+      )
+    }
   }
 
   private static let thickness: CGFloat = 1
@@ -101,10 +109,3 @@ enum FKTabBarFilterAnchorZoneInstaller {
   }
 }
 
-extension FKTabBarFilterDropdownController {
-  /// Applies a zone installer result to this controller's anchor placement.
-  func applyZoneInstallation(_ installation: FKTabBarFilterAnchorZoneInstaller.Installation) {
-    setAnchor(source: installation.sourceView, overlayHost: installation.overlayHost)
-    configuration.anchorPlacement?.hostStrategy = installation.hostStrategy
-  }
-}

@@ -3,10 +3,10 @@ import FKUIKit
 
 /// Weak-backed anchor geometry for presentations that attach to a view other than the tab bar.
 ///
-/// Store a reference on ``FKTabBarFilterDropdownConfiguration/anchorPlacement`` or call
-/// ``FKTabBarFilterDropdownController/setAnchor(source:overlayHost:)``.
+/// Store a reference on ``FKTabBarFilterConfiguration/anchorPlacement`` or call
+/// ``FKTabBarFilterController/setAnchor(source:overlayHost:)``.
 ///
-/// - Important: Retain this object for as long as it is stored in ``FKTabBarFilterDropdownConfiguration``;
+/// - Important: Retain this object for as long as it is stored in ``FKTabBarFilterConfiguration``;
 ///   the configuration struct only holds a reference to the instance.
 @MainActor
 public final class FKTabBarFilterAnchorPlacement {

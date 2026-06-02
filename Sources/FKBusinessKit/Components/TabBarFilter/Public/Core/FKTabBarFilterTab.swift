@@ -1,16 +1,27 @@
 import UIKit
 import FKUIKit
 
-/// One filter strip tab and the panel kind it presents.
+/// Panel content presented when a filter tab is expanded.
+public enum FKTabBarFilterTabPanelContent {
+  /// Built-in or factory-backed panel via ``FKTabBarFilterPanelKind``.
+  case panelKind(FKTabBarFilterPanelKind)
+  /// Custom panel without ``FKTabBarFilterPanelFactory``.
+  case viewController(@MainActor () -> UIViewController)
+  /// Lightweight ``UIView`` hosted in ``FKTabBarFilterViewWrappingController``.
+  case view(@MainActor () -> UIView)
+}
+
+/// One filter strip tab and the panel content it presents.
 public struct FKTabBarFilterTab<TabID: Hashable> {
   public let id: TabID
-  public let panelKind: FKTabBarFilterPanelKind
+  public let panelContent: FKTabBarFilterTabPanelContent
   public let title: () -> String
   public let subtitle: (() -> String?)?
   public let allowsMultipleSelection: Bool
   /// When `nil`, ``FKTabBarFilterController`` uses ``FKTabBarFilterConfiguration/defaultTabStrip``.
   public let tabStrip: FKTabBarFilterTabStripConfiguration?
 
+  /// Creates a tab backed by ``FKTabBarFilterPanelFactory`` for `panelKind`.
   public init(
     id: TabID,
     panelKind: FKTabBarFilterPanelKind,
@@ -20,7 +31,7 @@ public struct FKTabBarFilterTab<TabID: Hashable> {
     tabStrip: FKTabBarFilterTabStripConfiguration? = nil
   ) {
     self.id = id
-    self.panelKind = panelKind
+    self.panelContent = .panelKind(panelKind)
     self.title = title
     self.subtitle = subtitle
     self.allowsMultipleSelection = allowsMultipleSelection
@@ -46,5 +57,28 @@ public struct FKTabBarFilterTab<TabID: Hashable> {
       allowsMultipleSelection: allowsMultipleSelection,
       tabStrip: tabStrip
     )
+  }
+
+  /// Creates a tab with custom panel content (no ``FKTabBarFilterPanelKind``).
+  public init(
+    id: TabID,
+    title: @escaping () -> String,
+    subtitle: (() -> String?)? = nil,
+    allowsMultipleSelection: Bool = false,
+    tabStrip: FKTabBarFilterTabStripConfiguration? = nil,
+    panelContent: FKTabBarFilterTabPanelContent
+  ) {
+    self.id = id
+    self.panelContent = panelContent
+    self.title = title
+    self.subtitle = subtitle
+    self.allowsMultipleSelection = allowsMultipleSelection
+    self.tabStrip = tabStrip
+  }
+
+  /// Panel kind when ``panelContent`` is ``FKTabBarFilterTabPanelContent/panelKind``; otherwise `nil`.
+  public var panelKind: FKTabBarFilterPanelKind? {
+    if case let .panelKind(kind) = panelContent { return kind }
+    return nil
   }
 }

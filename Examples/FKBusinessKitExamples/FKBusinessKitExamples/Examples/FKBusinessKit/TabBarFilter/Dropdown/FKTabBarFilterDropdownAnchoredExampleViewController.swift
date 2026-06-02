@@ -140,7 +140,7 @@ final class FKTabBarFilterDropdownAnchoredExampleViewController: UIViewControlle
       onTagsSelectionEmptied: anchoredExample.usesTagsTitleCallback ? { [weak self] in
         guard let self else { return }
         self.tagsTabTitle = "Topics"
-        self.filterHost.dropdownController.reloadTabBarItems()
+        self.filterHost.reloadTabBarItems()
       } : nil,
       includesCustomPromoPanel: anchoredExample.includesCustomPromoPanel
     )
@@ -149,7 +149,7 @@ final class FKTabBarFilterDropdownAnchoredExampleViewController: UIViewControlle
     filterHost = FKTabBarFilterController(
       tabs: tabs,
       panelFactory: panelFactory,
-      filterConfiguration: anchoredExample.filterConfiguration,
+      configuration: anchoredExample.filterConfiguration,
       tabBarHost: tabStrip
     )
 
