@@ -5,7 +5,7 @@ import FKUIKit
 ///
 /// Why this exists:
 /// - The filter tab bar sits directly above the anchored panel; when the sheet attaches flush under the bar,
-///   a top separator improves visual separation (matches common filter dropdown patterns).
+///   a top separator improves visual separation (matches common filter strip patterns).
 /// - This wrapper keeps panel controllers simple and reusable (they don't need to know about hairlines).
 ///
 /// Usage:

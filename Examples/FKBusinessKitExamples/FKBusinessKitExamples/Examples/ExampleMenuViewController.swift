@@ -16,7 +16,7 @@ final class ExampleMenuViewController: UITableViewController {
     var subtitle: String {
       switch self {
       case .tabBarFilter:
-        return "Tab bar filter strip, anchored dropdown panels, and panel recipes."
+        return "FKTabBarFilterController, anchoring, and panel component recipes."
       }
     }
 

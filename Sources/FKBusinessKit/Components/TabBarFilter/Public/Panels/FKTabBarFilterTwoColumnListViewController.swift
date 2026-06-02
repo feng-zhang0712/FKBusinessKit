@@ -214,7 +214,7 @@ public final class FKTabBarFilterTwoColumnListViewController: UIViewController {
     return configuration.heightBehavior.resolvedHeight(for: estimated)
   }
 
-  /// Writes through to `super` so ancestor presenters (e.g. anchored dropdown) receive ``preferredContentSizeDidChange(forChildContentContainer:)``.
+  /// Writes through to `super` so ancestor presenters (e.g. anchored filter panel) receive ``preferredContentSizeDidChange(forChildContentContainer:)``.
   private func publishPreferredContentSizeUpdate() {
     let height = resolvedPreferredContentHeight()
     if lastPublishedPreferredHeight == height { return }

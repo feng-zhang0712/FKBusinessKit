@@ -1,45 +1,7 @@
 import UIKit
 import FKUIKit
 
-/// Chevron tab strip typography, spacing, and title/chevron colors for ``FKTabBarFilterTab`` / ``FKTabBarFilterController``.
-///
-/// Per-tab overrides live on ``FKTabBarFilterTab/tabStrip``; when `nil`, ``FKTabBarFilterConfiguration/defaultTabStrip`` is used.
-public struct FKTabBarFilterTabStripConfiguration: Sendable {
-  public var titleTextStyle: UIFont.TextStyle
-  public var subtitleTextStyle: UIFont.TextStyle
-  public var chevronSize: CGSize
-  public var chevronSpacing: CGFloat
-  public var titleSubtitleSpacing: CGFloat
-  public var normalTitleColor: UIColor
-  public var expandedTitleColor: UIColor
-  /// When equal to ``normalTitleColor`` (default), chevron tint follows the tab bar title color at layout time.
-  public var normalChevronColor: UIColor
-  public var expandedChevronColor: UIColor
-
-  public init(
-    titleTextStyle: UIFont.TextStyle = .subheadline,
-    subtitleTextStyle: UIFont.TextStyle = .caption2,
-    chevronSize: CGSize = CGSize(width: 14, height: 14),
-    chevronSpacing: CGFloat = 4,
-    titleSubtitleSpacing: CGFloat = 2,
-    normalTitleColor: UIColor = .label,
-    expandedTitleColor: UIColor = .tintColor,
-    normalChevronColor: UIColor = .label,
-    expandedChevronColor: UIColor = .tintColor
-  ) {
-    self.titleTextStyle = titleTextStyle
-    self.subtitleTextStyle = subtitleTextStyle
-    self.chevronSize = chevronSize
-    self.chevronSpacing = chevronSpacing
-    self.titleSubtitleSpacing = titleSubtitleSpacing
-    self.normalTitleColor = normalTitleColor
-    self.expandedTitleColor = expandedTitleColor
-    self.normalChevronColor = normalChevronColor
-    self.expandedChevronColor = expandedChevronColor
-  }
-}
-
-/// Configuration for ``FKTabBarFilterController``: ``FKTabBar`` strip, anchored presentation, strip defaults, and lifecycle hooks.
+/// Configuration for ``FKTabBarFilterController``: ``FKTabBar`` strip, anchored presentation, tab appearance defaults, and lifecycle hooks.
 ///
 /// Panel **content** for factory-backed tabs belongs on ``FKTabBarFilterPanelFactory`` and per-panel `Configuration` types.
 public struct FKTabBarFilterConfiguration<TabID: Hashable> {
@@ -89,11 +51,9 @@ public struct FKTabBarFilterConfiguration<TabID: Hashable> {
   public var contentCachingPolicy: ContentCachingPolicy
   /// Optional custom anchor; when `nil`, the tab bar is the source and the tab bar host view is the overlay container.
   public var anchorPlacement: FKTabBarFilterAnchorPlacement?
-
   public var events: Events
-
-  /// Used when ``FKTabBarFilterTab/tabStrip`` is `nil`.
-  public var defaultTabStrip: FKTabBarFilterTabStripConfiguration
+  /// Used when ``FKTabBarFilterTab/appearance`` is `nil`.
+  public var tabAppearance: FKTabBarFilterTabAppearance
 
   public init(
     tabBarConfiguration: FKTabBarConfiguration,
@@ -102,7 +62,7 @@ public struct FKTabBarFilterConfiguration<TabID: Hashable> {
     contentCachingPolicy: ContentCachingPolicy = .cachePerTab,
     anchorPlacement: FKTabBarFilterAnchorPlacement? = nil,
     events: Events = .init(),
-    defaultTabStrip: FKTabBarFilterTabStripConfiguration = .init()
+    tabAppearance: FKTabBarFilterTabAppearance = .init()
   ) {
     self.tabBarConfiguration = tabBarConfiguration
     self.presentationConfiguration = presentationConfiguration
@@ -110,10 +70,10 @@ public struct FKTabBarFilterConfiguration<TabID: Hashable> {
     self.contentCachingPolicy = contentCachingPolicy
     self.anchorPlacement = anchorPlacement
     self.events = events
-    self.defaultTabStrip = defaultTabStrip
+    self.tabAppearance = tabAppearance
   }
 
-  /// Creates filter settings with tuned anchored-dropdown defaults.
+  /// Creates filter settings with tuned anchored presentation defaults.
   @MainActor
   public init() {
     self.init(

@@ -18,8 +18,8 @@ public struct FKTabBarFilterTab<TabID: Hashable> {
   public let title: () -> String
   public let subtitle: (() -> String?)?
   public let allowsMultipleSelection: Bool
-  /// When `nil`, ``FKTabBarFilterController`` uses ``FKTabBarFilterConfiguration/defaultTabStrip``.
-  public let tabStrip: FKTabBarFilterTabStripConfiguration?
+  /// When `nil`, ``FKTabBarFilterController`` uses ``FKTabBarFilterConfiguration/tabAppearance``.
+  public let appearance: FKTabBarFilterTabAppearance?
 
   /// Creates a tab backed by ``FKTabBarFilterPanelFactory`` for `panelKind`.
   public init(
@@ -28,14 +28,14 @@ public struct FKTabBarFilterTab<TabID: Hashable> {
     title: @escaping () -> String,
     subtitle: (() -> String?)? = nil,
     allowsMultipleSelection: Bool = false,
-    tabStrip: FKTabBarFilterTabStripConfiguration? = nil
+    appearance: FKTabBarFilterTabAppearance? = nil
   ) {
     self.id = id
     self.panelContent = .panelKind(panelKind)
     self.title = title
     self.subtitle = subtitle
     self.allowsMultipleSelection = allowsMultipleSelection
-    self.tabStrip = tabStrip
+    self.appearance = appearance
   }
 
   /// Convenience for static title and optional subtitle strings.
@@ -45,7 +45,7 @@ public struct FKTabBarFilterTab<TabID: Hashable> {
     title: String,
     subtitle: String? = nil,
     allowsMultipleSelection: Bool = false,
-    tabStrip: FKTabBarFilterTabStripConfiguration? = nil
+    appearance: FKTabBarFilterTabAppearance? = nil
   ) {
     let titleClosure: () -> String = { title }
     let subtitleClosure: (() -> String?)? = subtitle.map { value in { value } }
@@ -55,7 +55,7 @@ public struct FKTabBarFilterTab<TabID: Hashable> {
       title: titleClosure,
       subtitle: subtitleClosure,
       allowsMultipleSelection: allowsMultipleSelection,
-      tabStrip: tabStrip
+      appearance: appearance
     )
   }
 
@@ -65,7 +65,7 @@ public struct FKTabBarFilterTab<TabID: Hashable> {
     title: @escaping () -> String,
     subtitle: (() -> String?)? = nil,
     allowsMultipleSelection: Bool = false,
-    tabStrip: FKTabBarFilterTabStripConfiguration? = nil,
+    appearance: FKTabBarFilterTabAppearance? = nil,
     panelContent: FKTabBarFilterTabPanelContent
   ) {
     self.id = id
@@ -73,7 +73,7 @@ public struct FKTabBarFilterTab<TabID: Hashable> {
     self.title = title
     self.subtitle = subtitle
     self.allowsMultipleSelection = allowsMultipleSelection
-    self.tabStrip = tabStrip
+    self.appearance = appearance
   }
 
   /// Panel kind when ``panelContent`` is ``FKTabBarFilterTabPanelContent/panelKind``; otherwise `nil`.
