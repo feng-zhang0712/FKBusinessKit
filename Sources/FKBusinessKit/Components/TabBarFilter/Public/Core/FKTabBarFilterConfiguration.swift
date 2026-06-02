@@ -14,6 +14,7 @@ public struct FKTabBarFilterTabStripConfiguration: Sendable {
   public var titleSubtitleSpacing: CGFloat
   public var normalTitleColor: UIColor
   public var expandedTitleColor: UIColor
+  /// When equal to ``normalTitleColor`` (default), chevron tint follows the tab bar title color at layout time.
   public var normalChevronColor: UIColor
   public var expandedChevronColor: UIColor
 
@@ -25,7 +26,7 @@ public struct FKTabBarFilterTabStripConfiguration: Sendable {
     titleSubtitleSpacing: CGFloat = 2,
     normalTitleColor: UIColor = .label,
     expandedTitleColor: UIColor = .tintColor,
-    normalChevronColor: UIColor = .secondaryLabel,
+    normalChevronColor: UIColor = .label,
     expandedChevronColor: UIColor = .tintColor
   ) {
     self.titleTextStyle = titleTextStyle

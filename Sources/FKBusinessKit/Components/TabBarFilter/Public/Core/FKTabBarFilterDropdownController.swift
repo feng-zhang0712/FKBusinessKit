@@ -187,12 +187,16 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
     view.backgroundColor = .clear
     installTabBarHost()
     applyConfiguration()
-    rebuildTabBarItems(keepSelectedTab: selectedTabInternal)
+    rebuildTabBarItems(keepSelectedTab: selectedTabInternal, animateChevronAccessories: false)
     wireTabBarEvents()
   }
 
   public override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
+    syncChevronAccessoryAnimations(
+      visualExpandedTabID: expandedTabInternal,
+      animated: false
+    )
     reconcileIfPossible()
   }
 
@@ -284,7 +288,11 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
     }
   }
 
-  private func rebuildTabBarItems(keepSelectedTab: TabID?, forceCollapsedChrome: Bool = false) {
+  private func rebuildTabBarItems(
+    keepSelectedTab: TabID?,
+    forceCollapsedChrome: Bool = false,
+    animateChevronAccessories: Bool = true
+  ) {
     let snapshot = FKTabBarFilterDropdownTab<TabID>.StateSnapshot(
       expandedTab: forceCollapsedChrome ? nil : expandedTabInternal
     )
@@ -294,6 +302,37 @@ public final class FKTabBarFilterDropdownController<TabID: Hashable>: UIViewCont
       tabBar.setSelectedIndex(idx, animated: true, notify: false, reason: .programmatic)
     }
     tabBar.reapplyVisibleItemConfigurations()
+    syncChevronAccessoryAnimations(
+      visualExpandedTabID: forceCollapsedChrome ? nil : expandedTabInternal,
+      animated: animateChevronAccessories
+    )
+  }
+
+  /// Host-owned chevron rotation (FKUIKit filter-strip preset); see ``FKTabBar/visibleItemAccessoryView(at:)``.
+  private func syncChevronAccessoryAnimations(visualExpandedTabID: TabID?, animated: Bool) {
+    for index in tabs.indices {
+      guard tabBar.visibleItems.indices.contains(index) else { continue }
+      guard tabBar.visibleItems[index].accessoryIcon != nil else { continue }
+      let expanded = visualExpandedTabID == tabs[index].id
+      applyChevronAccessoryRotation(at: index, expanded: expanded, animated: animated)
+    }
+  }
+
+  private func applyChevronAccessoryRotation(at index: Int, expanded: Bool, animated: Bool) {
+    guard let iconView = tabBar.visibleItemAccessoryView(at: index) else { return }
+    let targetTransform = expanded ? CGAffineTransform(rotationAngle: .pi) : .identity
+    guard animated else {
+      iconView.layer.removeAllAnimations()
+      iconView.transform = targetTransform
+      return
+    }
+    UIView.animate(
+      withDuration: 0.28,
+      delay: 0,
+      options: [.curveEaseInOut, .beginFromCurrentState, .allowUserInteraction]
+    ) {
+      iconView.transform = targetTransform
+    }
   }
 
   private func enqueueDesiredExpandedTab(_ tab: TabID?, animated: Bool, collapseReasonWhenDismissing: DismissReason) {

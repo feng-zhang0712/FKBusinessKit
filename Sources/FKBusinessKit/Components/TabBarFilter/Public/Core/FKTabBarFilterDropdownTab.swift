@@ -25,9 +25,9 @@ public struct FKTabBarFilterDropdownTab<TabID: Hashable> {
   public let id: TabID
   /// Builds the `FKTabBarItem` used by `FKTabBar`.
   ///
-  /// - Important: You are expected to reflect `snapshot.expandedTab` in the resulting item's
-  ///   selected/normal styles (for example, arrow direction or emphasis), so the tab visuals can
-  ///   reset back to "collapsed" after dismissal even if `FKTabBar` still keeps a selected index.
+  /// - Important: You are expected to reflect `snapshot.expandedTab` in title emphasis when using
+  ///   ``chevronTitle``; chevron rotation is applied by ``FKTabBarFilterDropdownController`` via
+  ///   ``FKTabBar/visibleItemAccessoryView(at:)``.
   public var makeTabBarItem: (_ snapshot: StateSnapshot) -> FKTabBarItem
   /// Provides the dropdown content for this tab.
   public var content: Content
@@ -44,9 +44,12 @@ public struct FKTabBarFilterDropdownTab<TabID: Hashable> {
 }
 
 public extension FKTabBarFilterDropdownTab {
-  /// A lightweight default tab builder using a title + chevron that flips up/down based on expanded state.
+  /// A lightweight default tab builder using a title + trailing `chevron.down` accessory.
   ///
-  /// This is a convenience for teams that don't need fully custom item views.
+  /// ``FKTabBarFilterDropdownController`` rotates the accessory 180° while the tab is expanded (filter-strip preset behavior).
+  ///
+  /// When ``normalChevronColor`` / ``expandedChevronColor`` match the corresponding title colors (defaults),
+  /// the chevron tint follows ``FKTabBar`` title emphasis at layout time.
   static func chevronTitle(
     id: TabID,
     itemID: String? = nil,
@@ -54,7 +57,7 @@ public extension FKTabBarFilterDropdownTab {
     subtitle: (() -> String?)? = nil,
     normalTitleColor: UIColor = .label,
     expandedTitleColor: UIColor = .tintColor,
-    normalChevronColor: UIColor = .secondaryLabel,
+    normalChevronColor: UIColor = .label,
     expandedChevronColor: UIColor = .tintColor,
     titleFont: UIFont = .preferredFont(forTextStyle: .subheadline),
     subtitleFont: UIFont = .preferredFont(forTextStyle: .caption2),
@@ -95,37 +98,51 @@ public extension FKTabBarFilterDropdownTab {
           )
         }
 
-        let image = FKTabBarImageConfiguration(
-          normal: .init(
-            source: .systemSymbol(name: isExpanded ? "chevron.up" : "chevron.down"),
-            style: FKTabBarImageStyle(
-              tintColor: isExpanded ? expandedChevronColor : normalChevronColor,
-              fixedSize: chevronSize,
-              spacingToTitle: max(0, chevronSpacing),
-              position: .trailing
-            )
-          ),
-          selected: .init(
-            source: .systemSymbol(name: isExpanded ? "chevron.up" : "chevron.down"),
-            style: FKTabBarImageStyle(
-              tintColor: isExpanded ? expandedChevronColor : normalChevronColor,
-              fixedSize: chevronSize,
-              spacingToTitle: max(0, chevronSpacing),
-              position: .trailing
-            )
-          )
+        let accessoryIcon = Self.makeChevronAccessoryIcon(
+          isExpanded: isExpanded,
+          chevronSize: chevronSize,
+          chevronSpacing: chevronSpacing,
+          normalTitleColor: normalTitleColor,
+          expandedTitleColor: expandedTitleColor,
+          normalChevronColor: normalChevronColor,
+          expandedChevronColor: expandedChevronColor
         )
 
         return FKTabBarItem(
           id: itemID ?? String(describing: id),
           title: titleConfig,
           subtitle: subtitleConfig,
-          image: image,
+          accessoryIcon: accessoryIcon,
           isEnabled: true,
           isHidden: false
         )
       },
       content: content
     )
+  }
+
+  /// Chevron tint follows the tab title color when chevron/title colors match; otherwise uses an explicit accessory tint.
+  private static func makeChevronAccessoryIcon(
+    isExpanded: Bool,
+    chevronSize: CGSize,
+    chevronSpacing: CGFloat,
+    normalTitleColor: UIColor,
+    expandedTitleColor: UIColor,
+    normalChevronColor: UIColor,
+    expandedChevronColor: UIColor
+  ) -> FKTabBarAccessoryIconConfiguration {
+    let titleColor = isExpanded ? expandedTitleColor : normalTitleColor
+    let chevronColor = isExpanded ? expandedChevronColor : normalChevronColor
+    let accessoryStyle = FKTabBarAccessoryIconStyle(
+      pointSize: max(chevronSize.width, chevronSize.height),
+      tintColor: chevronColor.isEqual(titleColor) ? nil : chevronColor,
+      fixedSize: chevronSize,
+      spacingToTitle: max(0, chevronSpacing)
+    )
+    let state = FKTabBarAccessoryIconConfiguration.State(
+      source: .systemSymbol(name: "chevron.down"),
+      style: accessoryStyle
+    )
+    return FKTabBarAccessoryIconConfiguration(normal: state, selected: state)
   }
 }

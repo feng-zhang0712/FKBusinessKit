@@ -70,7 +70,7 @@ public enum FKTabBarFilterHosting {
     verticalInset: CGFloat = 6
   ) {
     var layout = tabBar.configuration.layout
-    layout.itemContentInsets = .init(
+    layout.itemInsets = .init(
       top: verticalInset,
       leading: horizontalInset,
       bottom: verticalInset,
