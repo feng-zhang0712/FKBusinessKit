@@ -32,7 +32,7 @@ Sources/FKBusinessKit/
 
 - iOS 15.0+
 - Swift 6.0+
-- FKKit `0.59.1+` (`FKCoreKit`, `FKUIKit`)
+- FKKit `0.60.0+` (`FKCoreKit`, `FKUIKit`)
 
 ## Installation
 
