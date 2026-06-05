@@ -6,7 +6,7 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ### Changed
 
-- Raise minimum FKKit dependency to `0.60.0` (`Package.swift`, `FKBusinessKit.podspec`, README).
+- Raise minimum FKKit dependency to `0.61.0` (`Package.swift`, `FKBusinessKit.podspec`, README).
 
 ## [0.2.0] - 2026-06-02
 

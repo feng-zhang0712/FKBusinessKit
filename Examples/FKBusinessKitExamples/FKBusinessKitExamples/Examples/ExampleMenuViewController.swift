@@ -4,10 +4,13 @@ import FKBusinessKit
 
 final class ExampleMenuViewController: UITableViewController {
   private enum Row: Int, CaseIterable {
+    case base
     case tabBarFilter
 
     var title: String {
       switch self {
+      case .base:
+        return "Base"
       case .tabBarFilter:
         return "TabBarFilter"
       }
@@ -15,6 +18,8 @@ final class ExampleMenuViewController: UITableViewController {
 
     var subtitle: String {
       switch self {
+      case .base:
+        return "FKBaseViewController, table/collection bases, composition, and search integration."
       case .tabBarFilter:
         return "FKTabBarFilterController, anchoring, and panel component recipes."
       }
@@ -22,6 +27,8 @@ final class ExampleMenuViewController: UITableViewController {
 
     func makeViewController() -> UIViewController {
       switch self {
+      case .base:
+        return FKBaseExamplesHubViewController()
       case .tabBarFilter:
         return FKTabBarFilterExamplesHubViewController()
       }
