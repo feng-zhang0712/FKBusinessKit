@@ -13,20 +13,26 @@ open class FKBaseCollectionViewController: FKBaseViewController {
 
   public let collectionView: UICollectionView
 
-  public var isPullToRefreshEnabled: Bool = false
+  public var isPullToRefreshEnabled: Bool = false {
+    didSet { listRefresh.isPullToRefreshEnabled = isPullToRefreshEnabled }
+  }
 
-  public var isLoadMoreEnabled: Bool = false
+  public var isLoadMoreEnabled: Bool = false {
+    didSet { listRefresh.isLoadMoreEnabled = isLoadMoreEnabled }
+  }
 
-  public private(set) var pullToRefreshControl: FKRefreshControl?
+  public var pullToRefreshControl: FKRefreshControl? { listRefresh.pullToRefreshControl }
 
-  public private(set) var loadMoreControl: FKRefreshControl?
+  public var loadMoreControl: FKRefreshControl? { listRefresh.loadMoreControl }
 
-  public private(set) var loadMoreState: FKBaseTableLoadMoreState = .idle
+  public var loadMoreState: FKBaseLoadMoreState { listRefresh.loadMoreState }
 
   /// Flow layout cast when the controller was created with ``UICollectionViewFlowLayout`` (including the default).
   public var flowLayout: UICollectionViewFlowLayout? {
     collectionView.collectionViewLayout as? UICollectionViewFlowLayout
   }
+
+  private let listRefresh = FKBaseListRefreshCoordinator()
 
   // MARK: - Init
 
@@ -59,6 +65,8 @@ open class FKBaseCollectionViewController: FKBaseViewController {
   private func commonCollectionControllerInit() {
     disableScrollViewBounceByDefault = false
     collectionView.translatesAutoresizingMaskIntoConstraints = false
+    listRefresh.isPullToRefreshEnabled = isPullToRefreshEnabled
+    listRefresh.isLoadMoreEnabled = isLoadMoreEnabled
   }
 
   /// Default flow layout: vertical scrolling with estimated sizing-friendly defaults.
@@ -92,7 +100,13 @@ open class FKBaseCollectionViewController: FKBaseViewController {
 
   open override func setupBindings() {
     super.setupBindings()
-    installRefreshControlsIfNeeded()
+    listRefresh.installIfNeeded(on: collectionView) { [weak self] in
+      self?.performPullToRefresh()
+    } loadMoreHandler: { [weak self] in
+      self?.listRefresh.handleLoadMoreInvoked {
+        self?.performLoadMore()
+      }
+    }
     if let prefetching = self as? UICollectionViewDataSourcePrefetching {
       collectionView.prefetchDataSource = prefetching
     } else {
@@ -120,65 +134,22 @@ open class FKBaseCollectionViewController: FKBaseViewController {
   // MARK: - Refresh helpers
 
   public func endPullToRefresh(success: Bool) {
-    guard let control = pullToRefreshControl else { return }
-    if success {
-      control.endRefreshing()
-    } else {
-      control.endRefreshingWithError(nil)
-    }
+    listRefresh.endPullToRefresh(success: success)
   }
 
   public func markLoadMoreFinished() {
-    loadMoreState = .idle
-    loadMoreControl?.endLoadingMore()
+    listRefresh.markLoadMoreFinished()
   }
 
   public func markLoadMoreNoMoreData() {
-    loadMoreState = .completed
-    loadMoreControl?.endRefreshingWithNoMoreData()
+    listRefresh.markLoadMoreNoMoreData()
   }
 
   public func markLoadMoreFailed(_ error: Error? = nil) {
-    loadMoreState = .failed
-    loadMoreControl?.endRefreshingWithError(error)
+    listRefresh.markLoadMoreFailed(error)
   }
 
   public func scrollCollectionToTop(animated: Bool) {
     collectionView.fk_scrollToTop(animated: animated)
-  }
-
-  // MARK: - Private
-
-  private var didInstallRefreshControls = false
-
-  private func installRefreshControlsIfNeeded() {
-    guard !didInstallRefreshControls else { return }
-    didInstallRefreshControls = true
-
-    if isPullToRefreshEnabled {
-      pullToRefreshControl = collectionView.fk_addPullToRefresh { [weak self] in
-        self?.handlePullToRefreshInvoked()
-      }
-    }
-
-    if isLoadMoreEnabled {
-      loadMoreControl = collectionView.fk_addLoadMore { [weak self] in
-        self?.handleLoadMoreInvoked()
-      }
-    }
-  }
-
-  private func handlePullToRefreshInvoked() {
-    performPullToRefresh()
-  }
-
-  private func handleLoadMoreInvoked() {
-    guard loadMoreState != .completed else {
-      loadMoreControl?.endRefreshingWithNoMoreData()
-      return
-    }
-    guard loadMoreState != .loading else { return }
-    loadMoreState = .loading
-    performLoadMore()
   }
 }

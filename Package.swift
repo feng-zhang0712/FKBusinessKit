@@ -33,6 +33,7 @@ let package = Package(
       exclude: [
         "README.md",
         "Components/TabBarFilter/README.md",
+        "Components/Base/README.md",
       ]
     ),
   ],

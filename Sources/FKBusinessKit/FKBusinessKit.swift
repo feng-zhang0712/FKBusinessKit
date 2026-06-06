@@ -18,6 +18,7 @@ public enum FKBusinessKitBase {
   public typealias SearchIntegration = FKBaseSearchIntegration
   public typealias ListSkeletonReuseIdentifier = FKBaseListSkeletonReuseIdentifier
   public typealias ListSkeletonLayout = FKBaseListSkeletonLayout
+  public typealias LoadMoreState = FKBaseLoadMoreState
   public typealias ViewControllerComposite = FKViewControllerComposite
   public typealias ViewControllerBuildPhases = FKViewControllerBuildPhases
   public typealias ViewControllerCompositeHosting = FKViewControllerCompositeHosting

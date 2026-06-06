@@ -4,27 +4,198 @@ UIKit-first building blocks for composite screens: **inheritance-friendly** base
 
 All public types in this folder are documented for **`@MainActor`** usage (UIKit alignment).
 
+**Entry point:** when legacy FKUIKit copies of Base types are still visible (FKKit ≤ 0.60), prefer `FKBusinessKitBase.*` typealiases from `import FKBusinessKit`.
+
+---
+
+## Directory map
+
+```text
+Components/Base/
+├── README.md                              # This file
+├── Controller/
+│   ├── FKBaseViewController.swift         # Root base VC (lifecycle + overlays + composite host)
+│   ├── FKBaseTableViewController.swift    # Single-table specialization + refresh/load-more
+│   ├── FKBaseCollectionViewController.swift
+│   ├── FKBaseListPresentation.swift       # FKSkeleton / FKEmptyState list helpers
+│   └── FKBaseSearchIntegration.swift      # UISearchController attachment helpers
+├── Composition/
+│   ├── FKViewControllerCompositionProtocols.swift   # Build phases, hosting, forwarding
+│   └── FKViewControllerCompositionServices.swift    # FKViewControllerComposite bucket
+├── Cell/
+│   ├── FKBaseTableViewCell.swift
+│   ├── FKBaseCollectionViewCell.swift
+│   └── FKBaseReusableCellCore.swift       # Internal layout/shadow helpers
+└── Internal/                              # Shared implementation (not public API)
+    ├── FKBaseNavigationChromeSupport.swift
+    ├── FKBaseNavigationInteractivePopGesture.swift
+    ├── FKBaseScrollBounce.swift
+    ├── FKBaseViewControllerHierarchy.swift
+    ├── FKBaseViewController+StateOverlays.swift
+    └── FKBaseListRefreshCoordinator.swift
+```
+
+---
+
+## Architecture
+
+### Two integration paths
+
+| Path | When to use | What you get |
+|------|-------------|--------------|
+| **Subclass** `FKBaseViewController` (or table/collection subclasses) | Default for new screens; one place for lifecycle, overlays, and chrome | `setupUI` / `setupConstraints` / `setupBindings`, loading/empty/error overlays, `FKToast`, first-load hooks |
+| **Compose** `FKViewControllerComposite` on a plain `UIViewController` | App already has another base class, or you need only keyboard/nav/tap-to-dismiss | Same cross-cutting behavior without inheriting `FKBaseViewController` |
+
+**Important:** `FKBaseViewController` **internally owns** a `FKViewControllerComposite` and forwards UIKit lifecycle to it. Subclassing the base and using composition manually are **not mutually exclusive concepts** — they share one implementation for navigation chrome, keyboard, interactive pop, and tap-to-dismiss.
+
+```mermaid
+flowchart TB
+  subgraph inheritance [Inheritance path]
+    BVC[FKBaseViewController]
+    TBC[FKBaseTableViewController]
+    BVC --> TBC
+  end
+
+  subgraph composition [Composition path]
+    VC[UIViewController]
+    COMP[FKViewControllerComposite]
+    VC --> COMP
+  end
+
+  subgraph shared [Shared Internal]
+    NAV[FKBaseNavigationChromeSupport]
+    POP[FKBaseNavigationInteractivePopGesture]
+    COMP --> NAV
+    BVC --> COMP
+    COMP --> POP
+  end
+```
+
+### What lives only on `FKBaseViewController`
+
+These are **not** duplicated in `FKViewControllerComposite`:
+
+- Full-page **loading** spinner (`showLoading` / `hideLoading`)
+- Full-page **empty** and **error** overlays via **FKEmptyState** (`showEmptyView`, `showErrorView`, …)
+- **`FKToast`** helper
+- Custom **back button** (`configureBackButton`)
+- Three-phase build API: `setupUI` → `setupConstraints` → `setupBindings`
+- First-load hooks: `loadInitialContent()` then `viewDidAppearForTheFirstTime(_:)`
+- Optional **`logHandler`** / **`debugLifecycleLoggingEnabled`**
+
+List-specific skeleton/empty integration lives on table/collection subclasses via `FKBaseListPresentation.swift`.
+
 ---
 
 ## View controllers
 
 ### `FKBaseViewController`
 
-Common lifecycle entry points (`setupUI`, `setupConstraints`, `setupBindings`), keyboard forwarding, navigation bar snapshot/restore, optional loading / empty / error overlays, `FKToast`, and logging hooks.
+Common lifecycle entry points, keyboard forwarding, navigation bar snapshot/restore, optional loading / empty / error overlays, `FKToast`, and logging hooks.
+
+#### Lifecycle order
+
+| Callback | Base work (via composite + overlays) | Your overrides |
+|----------|----------------------------------------|----------------|
+| `viewDidLoad` | Composite bind (tap-to-dismiss, scroll bounce policy), `setupUI`, `setupConstraints`, `setupBindings` | Build hierarchy and bindings |
+| `viewWillAppear` | Capture nav snapshot, apply nav visibility/style, install pop-gesture delegate | — |
+| `viewDidAppear` | Start keyboard observation; first-load: `loadInitialContent()` → `viewDidAppearForTheFirstTime` | Keyboard hooks |
+| `viewWillDisappear` | Stop keyboard; restore nav snapshot **only when permanently leaving** (pop/dismiss/detach) | — |
 
 **First load:** override **`loadInitialContent()`** — runs **once** on the first `viewDidAppear`, **before** **`viewDidAppearForTheFirstTime(_:)`**. Use it to start fetches; use `viewDidAppearForTheFirstTime` for on-screen-only UI (animations).
+
+#### Navigation bar chrome
+
+Public enums:
+
+- **`NavigationBarVisibility`**: `.visible` / `.hidden`
+- **`NavigationBarStyle`**: `.system`, `.opaqueDefault`, `.transparent`, `.gradient(colors:locations:startPoint:endPoint:)`
+
+**Snapshot rules** (shared by base class and composition):
+
+1. On the host’s **first** `viewWillAppear`, deep-copy the current `UINavigationBar` appearances (standard, scroll-edge, compact, compact scroll-edge when available), translucency, large-title preference, and hidden state.
+2. While visible, apply `navigationBarVisibility`, `navigationBarStyle`, and optional `prefersLargeTitlesWhileVisible`.
+3. Custom styles (non-`.system`) apply to the host’s **`UINavigationItem`** appearances so interactive pop transitions can interpolate per controller.
+4. **Restore** the snapshot only when the host **permanently leaves** the hierarchy (`isBeingDismissed` or `isMovingFromParent`) — **not** when another controller is pushed on top.
+5. Changing `navigationBarVisibility`, `navigationBarStyle`, or `prefersLargeTitlesWhileVisible` **while on-screen** re-applies chrome with animation.
+
+#### Interactive pop gesture
+
+Set **`disablesInteractivePopGesture = true`** to block edge swipe-back while this controller is visible.
+
+Implementation details:
+
+- Captures and restores `interactivePopGestureRecognizer.isEnabled` (and on **iOS 26+** `interactiveContentPopGestureRecognizer.isEnabled`) when leaving permanently.
+- Installs a **one-time** forwarding `UIGestureRecognizerDelegate` per `UINavigationController` so UIKit resets to `isEnabled` do not bypass the policy.
+- Works for **`FKBaseViewController`** subclasses and **`FKViewControllerCompositeHosting`** adopters.
+
+#### Keyboard
+
+- Observed between `viewDidAppear` and `viewWillDisappear` when **`keyboardObservationEnabled`** is `true` (default).
+- Override **`keyboardWillChange(to:duration:curve:)`** and **`keyboardWillHide(duration:curve:)`** — callbacks are always dispatched on the main queue.
+
+#### Configuration reference
+
+| Property | Default | Role |
+|----------|---------|------|
+| `dismissKeyboardOnTapEnabled` | `true` | Tap outside controls → `endEditing` |
+| `disableScrollViewBounceByDefault` | `true` | Recursively disables scroll view bounce in `view` subtree |
+| `disablesInteractivePopGesture` | `false` | Block interactive pop while visible |
+| `navigationBarVisibility` | `.visible` | Hide/show bar while on-screen |
+| `navigationBarStyle` | `.system` | Bar/item appearance |
+| `prefersLargeTitlesWhileVisible` | `nil` | Override large titles; `nil` → snapshot value |
+| `keyboardObservationEnabled` | `true` | Toggle keyboard notifications |
+| `preferredStatusBarAppearance` | `.default` | Status bar style |
+| `debugLifecycleLoggingEnabled` | `false` | Forward lifecycle to `FKLogger` |
+
+#### State overlays
+
+| API | Behavior |
+|-----|----------|
+| `showLoading()` / `hideLoading()` | Centered `UIActivityIndicatorView`; hides empty/error |
+| `showEmptyView(message:)` | Full-page FKEmptyState (empty phase) |
+| `showErrorView(message:retryTitle:retryHandler:)` | Full-page FKEmptyState (error phase, optional retry) |
+| `showToast(_:)` | Short banner via `FKToast` |
+
+For **list** screens, prefer scroll-embedded empty states and skeleton placeholders (see below) instead of full-page overlays.
+
+---
 
 ### `FKBaseTableViewController` / `FKBaseCollectionViewController`
 
 Single primary `UITableView` or `UICollectionView`, pinned to the safe area and **`keyboardLayoutGuide`** (iOS 15+). Optional pull-to-refresh and load-more via **FKUIKit** `fk_addPullToRefresh` / `fk_addLoadMore`.
 
-**List presentation** (``FKBaseListPresentation.swift``): integrates **FKSkeleton** placeholder rows and **FKEmptyState** scroll overlays:
+**List defaults:**
 
-- ``beginSkeletonPlaceholderLoading(count:reloadData:)`` / ``endSkeletonPlaceholderLoading(reloadData:)``
-- ``applyListEmptyState(_:animated:actionHandler:)`` / ``hideListEmptyState(animated:)`` / ``syncListEmptyState(itemCount:emptyConfiguration:...)``
-- ``FKBaseListSkeletonLayout`` default avatar-row and grid-tile placeholders
+- Sets **`disableScrollViewBounceByDefault = false`** in `init` so pull-to-refresh remains ergonomic.
+- Does **not** implement `dataSource` / `delegate` — subclasses assign them (or use diffable data sources).
+- Refresh/load-more wiring is shared via **`FKBaseListRefreshCoordinator`** (Internal).
 
-Set **`isPullToRefreshEnabled`** / **`isLoadMoreEnabled`** in **`init`** (before `setupBindings()`). Shared footer state: **`FKBaseTableLoadMoreState`**.
+**Refresh / load-more:**
+
+- Set **`isPullToRefreshEnabled`** / **`isLoadMoreEnabled`** in **`init`** (before `setupBindings()`).
+- Override **`performPullToRefresh()`** / **`performLoadMore()`**.
+- End cycles with **`endPullToRefresh(success:)`**, **`markLoadMoreFinished()`**, **`markLoadMoreNoMoreData()`**, **`markLoadMoreFailed(_:)`**.
+
+#### `FKBaseLoadMoreState` vs `FKRefreshState`
+
+| Type | Layer | Purpose |
+|------|-------|---------|
+| **`FKRefreshState`** (FKUIKit) | Refresh **control UI** | Pulling, ready, refreshing, loading-more, no-more-data, failed — drives gestures, animation, copy |
+| **`FKBaseLoadMoreState`** | Controller **pagination** | `idle`, `loading`, `completed`, `failed` — guards duplicate fetches and marks exhaustion |
+
+`FKBaseTableLoadMoreState` is a deprecated alias for **`FKBaseLoadMoreState`**.
+
+#### List presentation (`FKBaseListPresentation.swift`)
+
+Integrates **FKSkeleton** placeholder rows and **FKEmptyState** scroll overlays:
+
+- `beginSkeletonPlaceholderLoading(count:reloadData:)` / `endSkeletonPlaceholderLoading(reloadData:)`
+- `applyListEmptyState(_:animated:actionHandler:)` / `hideListEmptyState(animated:)` / `syncListEmptyState(itemCount:emptyConfiguration:...)`
+- `FKBaseListSkeletonLayout` — default avatar-row and grid-tile placeholders
+- `FKBaseListSkeletonReuseIdentifier` — shared skeleton cell IDs
+
+---
 
 ### `FKBaseSearchIntegration`
 
@@ -38,26 +209,79 @@ Static helpers to attach or remove a **`UISearchController`** on **`navigationIt
 
 Shared **`containerView`**, reuse identifiers, card-style chrome, **`prepareForReuse`** → **`resetCellContent()`**, trait and selection hooks.
 
-### `FKBaseReusableCellCore`
+**Dequeue helpers** (FKKit snake_case convention):
 
-Internal layout/shadow helpers shared by both cell bases.
+```swift
+let cell = tableView.fk_dequeueCell(MyCell.self, for: indexPath)
+let cell = collectionView.fk_dequeueCell(MyCell.self, for: indexPath)
+```
+
+### Configuring with models
+
+**Do not** add a generic `configure(_ model:)` on the open base classes — model binding is app-specific.
+
+**Recommended:** conform your cell subclass to FKCoreKit pluggable protocols (`FKListTableCellConfigurable`, etc.) or add a typed `configure(with:)` on the subclass.
 
 ---
 
 ## Composition (no base-class inheritance)
 
-When you **cannot** subclass `FKBaseViewController` (e.g. another base class in the app), use:
+When you **cannot** subclass `FKBaseViewController`:
 
-- **`FKViewControllerComposite`** — bundles keyboard, navigation chrome snapshot, interactive pop gesture, tap-to-dismiss, appearance flags.
-- Protocols: **`FKViewControllerBuildPhases`**, **`FKViewControllerCompositeHosting`**, **`FKViewControllerTraitChangeHandling`**.
+### Protocols
 
-Forward UIKit callbacks with **`forwardComposite(_:)`** on the hosting type.
+| Protocol | Role |
+|----------|------|
+| **`FKViewControllerBuildPhases`** | `buildInterface()` → `buildConstraints()` → `bindInteractions()`; call **`runBuildPhases()`** from `viewDidLoad` |
+| **`FKViewControllerCompositeHosting`** | Owns **`composite: FKViewControllerComposite`** |
+| **`FKViewControllerTraitChangeHandling`** | `handleTraitCollectionChange(_:)` hook |
 
-See `Composition/FKViewControllerCompositionProtocols.swift` and `FKViewControllerCompositionServices.swift`.
+### `FKViewControllerComposite` services
+
+| Service | Property | Notes |
+|---------|----------|-------|
+| Keyboard | `composite.keyboard` | `onWillChangeFrame`, `onWillHide`, `isEnabled` |
+| Navigation chrome | `composite.navigationChrome` | Same snapshot/style rules as base class |
+| Interactive pop | `composite.interactivePopGesture` | `disablesInteractivePopGesture` |
+| Tap to dismiss | `composite.tapToDismissKeyboard` | `isEnabled` |
+| Appearance flags | `composite.appearanceState` | `hasCompletedInitialAppearance`, `isViewAppeared`, `onFirstAppearance` |
+| Scroll bounce | `disablesScrollBounceRecursivelyByDefault` | Applied in `viewDidLoad` |
+
+Forward UIKit callbacks:
+
+```swift
+override func viewWillAppear(_ animated: Bool) {
+  super.viewWillAppear(animated)
+  forwardComposite(.viewWillAppear(animated: animated))
+}
+// … viewDidLoad, viewDidAppear, viewWillDisappear, viewDidDisappear
+```
+
+See `Composition/FKViewControllerCompositionProtocols.swift`, `FKViewControllerCompositionServices.swift`, and the **Composition** example in FKBusinessKitExamples.
 
 ---
 
-## Subclassing vs composition
+## Subclassing vs composition — decision guide
 
-- **Subclass** `FKBase*` when you want a single place for lifecycle + shared chrome.
-- **Compose** `FKViewControllerComposite` when you need capabilities without a deep inheritance chain.
+| Need | Choose |
+|------|--------|
+| Table/collection screen with refresh, skeleton, empty | **`FKBaseTableViewController`** / **`FKBaseCollectionViewController`** |
+| Non-list screen with loading/empty/error overlays | **`FKBaseViewController`** |
+| Only keyboard + nav chrome + tap-to-dismiss | **`FKViewControllerComposite`** on your existing base |
+| Another app base class you cannot change | Composition + **`FKViewControllerBuildPhases`** |
+| Shared card-style cells | **`FKBaseTableViewCell`** / **`FKBaseCollectionViewCell`** + pluggable configure protocols |
+
+---
+
+## Examples
+
+FKBusinessKitExamples → **Base** hub:
+
+| Scenario | Demonstrates |
+|----------|--------------|
+| ViewController | Overlays, keyboard, nav styles, first-load hooks |
+| Table / Collection | Refresh, skeleton, empty/error list states |
+| Composition | Plain `UIViewController` + composite forwarding |
+| Search | `FKBaseSearchIntegration` |
+
+When FKUIKit still exports legacy Base types (FKKit ≤ 0.60), qualify APIs with **`FKBusinessKit.`** or use **`FKBusinessKitBase`** typealiases in example code.

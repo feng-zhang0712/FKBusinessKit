@@ -2,12 +2,16 @@ import FKCoreKit
 import UIKit
 
 /// Load-more footer lifecycle for scroll-based base controllers (``FKBaseTableViewController``, ``FKBaseCollectionViewController``).
-public enum FKBaseTableLoadMoreState: Equatable {
+public enum FKBaseLoadMoreState: Equatable {
   case idle
   case loading
   case completed
   case failed
 }
+
+/// Renamed to ``FKBaseLoadMoreState``; kept for source compatibility.
+@available(*, deprecated, renamed: "FKBaseLoadMoreState")
+public typealias FKBaseTableLoadMoreState = FKBaseLoadMoreState
 
 /// A `FKBaseViewController` specialization centered on a single primary `UITableView`.
 ///
@@ -28,19 +32,25 @@ open class FKBaseTableViewController: FKBaseViewController {
   public let tableView: UITableView
 
   /// When `true`, installs ``UIScrollView/fk_addPullToRefresh(configuration:action:)`` during ``setupBindings()``.
-  public var isPullToRefreshEnabled: Bool = false
+  public var isPullToRefreshEnabled: Bool = false {
+    didSet { listRefresh.isPullToRefreshEnabled = isPullToRefreshEnabled }
+  }
 
   /// When `true`, installs ``UIScrollView/fk_addLoadMore(configuration:action:)`` during ``setupBindings()``.
-  public var isLoadMoreEnabled: Bool = false
+  public var isLoadMoreEnabled: Bool = false {
+    didSet { listRefresh.isLoadMoreEnabled = isLoadMoreEnabled }
+  }
 
   /// Attached header control, if ``isPullToRefreshEnabled`` is `true` after ``setupBindings()``.
-  public private(set) var pullToRefreshControl: FKRefreshControl?
+  public var pullToRefreshControl: FKRefreshControl? { listRefresh.pullToRefreshControl }
 
-  /// Attached footer control, if ``isLoadMoreEnabled`` is `true` after ``setupBindings()`.
-  public private(set) var loadMoreControl: FKRefreshControl?
+  /// Attached footer control, if ``isLoadMoreEnabled`` is `true` after ``setupBindings()``.
+  public var loadMoreControl: FKRefreshControl? { listRefresh.loadMoreControl }
 
   /// High-level pagination hint for load-more UX (call ``markLoadMoreFinished()`` / ``markLoadMoreNoMoreData()`` from your fetch logic).
-  public private(set) var loadMoreState: FKBaseTableLoadMoreState = .idle
+  public var loadMoreState: FKBaseLoadMoreState { listRefresh.loadMoreState }
+
+  private let listRefresh = FKBaseListRefreshCoordinator()
 
   // MARK: - Init
 
@@ -67,6 +77,8 @@ open class FKBaseTableViewController: FKBaseViewController {
     // Lists rely on vertical bounce for pull-to-refresh; do not inherit the global “disable all bounce” default.
     disableScrollViewBounceByDefault = false
     tableView.translatesAutoresizingMaskIntoConstraints = false
+    listRefresh.isPullToRefreshEnabled = isPullToRefreshEnabled
+    listRefresh.isLoadMoreEnabled = isLoadMoreEnabled
   }
 
   // MARK: - Lifecycle
@@ -89,7 +101,13 @@ open class FKBaseTableViewController: FKBaseViewController {
 
   open override func setupBindings() {
     super.setupBindings()
-    installRefreshControlsIfNeeded()
+    listRefresh.installIfNeeded(on: tableView) { [weak self] in
+      self?.performPullToRefresh()
+    } loadMoreHandler: { [weak self] in
+      self?.listRefresh.handleLoadMoreInvoked {
+        self?.performLoadMore()
+      }
+    }
     if let prefetching = self as? UITableViewDataSourcePrefetching {
       tableView.prefetchDataSource = prefetching
     } else {
@@ -130,69 +148,26 @@ open class FKBaseTableViewController: FKBaseViewController {
 
   /// Ends the pull-to-refresh header using ``FKRefreshControl`` outcome helpers.
   public func endPullToRefresh(success: Bool) {
-    guard let control = pullToRefreshControl else { return }
-    if success {
-      control.endRefreshing()
-    } else {
-      control.endRefreshingWithError(nil)
-    }
+    listRefresh.endPullToRefresh(success: success)
   }
 
   /// Marks a successful load-more cycle (more pages may exist).
   public func markLoadMoreFinished() {
-    loadMoreState = .idle
-    loadMoreControl?.endLoadingMore()
+    listRefresh.markLoadMoreFinished()
   }
 
   /// Marks pagination as exhausted (disables further footer loading UX).
   public func markLoadMoreNoMoreData() {
-    loadMoreState = .completed
-    loadMoreControl?.endRefreshingWithNoMoreData()
+    listRefresh.markLoadMoreNoMoreData()
   }
 
   /// Marks load-more failure while keeping existing rows visible.
   public func markLoadMoreFailed(_ error: Error? = nil) {
-    loadMoreState = .failed
-    loadMoreControl?.endRefreshingWithError(error)
+    listRefresh.markLoadMoreFailed(error)
   }
 
   /// Scrolls the table to the top using ``UIScrollView/fk_scrollToTop(animated:)``.
   public func scrollTableToTop(animated: Bool) {
     tableView.fk_scrollToTop(animated: animated)
-  }
-
-  // MARK: - Private
-
-  private var didInstallRefreshControls = false
-
-  private func installRefreshControlsIfNeeded() {
-    guard !didInstallRefreshControls else { return }
-    didInstallRefreshControls = true
-
-    if isPullToRefreshEnabled {
-      pullToRefreshControl = tableView.fk_addPullToRefresh { [weak self] in
-        self?.handlePullToRefreshInvoked()
-      }
-    }
-
-    if isLoadMoreEnabled {
-      loadMoreControl = tableView.fk_addLoadMore { [weak self] in
-        self?.handleLoadMoreInvoked()
-      }
-    }
-  }
-
-  private func handlePullToRefreshInvoked() {
-    performPullToRefresh()
-  }
-
-  private func handleLoadMoreInvoked() {
-    guard loadMoreState != .completed else {
-      loadMoreControl?.endRefreshingWithNoMoreData()
-      return
-    }
-    guard loadMoreState != .loading else { return }
-    loadMoreState = .loading
-    performLoadMore()
   }
 }
