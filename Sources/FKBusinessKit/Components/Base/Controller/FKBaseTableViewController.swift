@@ -16,7 +16,8 @@ public typealias FKBaseTableLoadMoreState = FKBaseLoadMoreState
 /// A `FKBaseViewController` specialization centered on a single primary `UITableView`.
 ///
 /// Responsibilities:
-/// - Pins the table to the safe area and ``UIView/keyboardLayoutGuide`` (iOS 15+) for keyboard avoidance.
+/// - Pins the table below ``tableViewTopLayoutAnchor`` (default: safe area top) and
+///   ``UIView/keyboardLayoutGuide`` (iOS 15+) for keyboard avoidance.
 /// - Keeps vertical bounce enabled for pull-to-refresh ergonomics (see ``disableScrollViewBounceByDefault``).
 /// - Optionally wires ``FKRefreshControl`` pull and load-more footers via ``isPullToRefreshEnabled`` /
 ///   ``isLoadMoreEnabled``.
@@ -92,7 +93,7 @@ open class FKBaseTableViewController: FKBaseViewController {
   open override func setupConstraints() {
     super.setupConstraints()
     NSLayoutConstraint.activate([
-      tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+      tableView.topAnchor.constraint(equalTo: tableViewTopLayoutAnchor),
       tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
       tableView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
@@ -116,6 +117,16 @@ open class FKBaseTableViewController: FKBaseViewController {
   }
 
   // MARK: - Overridable configuration
+
+  /// Top layout anchor for ``tableView``. Defaults to ``UIViewController/view``'s
+  /// ``UIView/safeAreaLayoutGuide`` top.
+  ///
+  /// Override after adding chrome above the table (e.g. ``FKTabBarFilterHosting/embedStrip(_:in:topAnchor:fixedStripHeight:overlayHost:)``)
+  /// so ``setupConstraints()`` pins the table below that view instead of the safe area.
+  /// ``setupUI()`` runs before ``setupConstraints()``, so anchors from views added in ``setupUI()`` are valid here.
+  open var tableViewTopLayoutAnchor: NSLayoutYAxisAnchor {
+    view.safeAreaLayoutGuide.topAnchor
+  }
 
   /// One-time table configuration (style is fixed by the initializer). Default enables self-sizing rows
   /// and separator behavior suitable for most apps.
