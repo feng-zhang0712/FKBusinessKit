@@ -1,7 +1,7 @@
 # FKBusinessKit
 
 [![iOS](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.2.0)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.3.0)
 [![Swift](https://img.shields.io/badge/Swift-6.0%2B-orange.svg)](https://swift.org/)
 [![SPM](https://img.shields.io/badge/SPM-supported-brightgreen.svg)](https://swift.org/package-manager/)
 [![CocoaPods](https://img.shields.io/badge/CocoaPods-supported-ee3322.svg)](https://cocoapods.org/)
@@ -34,6 +34,7 @@ It is distributed via **Swift Package Manager (SPM)** and **CocoaPods**. `import
 ## Features
 - Pure Swift implementation (Swift 6 language mode in package settings).
 - **iOS-only** — `platforms: [.iOS(.v15)]` in `Package.swift`.
+- **`Base`** — inheritance-friendly view controller bases and optional composition layer ([component README](Sources/FKBusinessKit/Components/Base/README.md)).
 - **`TabBarFilter`** — anchored filter strip with built-in panel kinds and custom panel support ([component README](Sources/FKBusinessKit/Components/TabBarFilter/README.md)).
 - Depends on **FKCoreKit** and **FKUIKit** (FKKit `0.62.0+`, see [FKKit dependency & versions](#fkit-dependency--versions)).
 - GitHub Actions CI: builds on **iOS Simulator**.
@@ -74,14 +75,14 @@ FKBusinessKit/
 ## Installation (SPM)
 
 ### Xcode
-1. Add **FKBusinessKit**: `https://github.com/feng-zhang0712/FKBusinessKit.git` (from `0.2.0`)
+1. Add **FKBusinessKit**: `https://github.com/feng-zhang0712/FKBusinessKit.git` (from `0.3.0`)
 2. Link **`FKBusinessKit`** to your app target (FKKit is resolved transitively).
 3. **Optional:** also add **FKKit** (`from: "0.62.0"`) if many targets use `FKUIKit` directly without `import FKBusinessKit`.
 
 ### Package.swift (typical app)
 ```swift
 dependencies: [
-  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.2.0"),
+  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.3.0"),
 ],
 targets: [
   .target(
@@ -97,7 +98,7 @@ targets: [
 ```swift
 dependencies: [
   .package(url: "https://github.com/feng-zhang0712/FKKit.git", from: "0.62.0"),
-  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.2.0"),
+  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.3.0"),
 ],
 targets: [
   .target(
@@ -124,7 +125,7 @@ dependencies: [
 platform :ios, '15.0'
 
 pod 'FKCoreKit',     :git => 'https://github.com/feng-zhang0712/FKKit.git', :tag => '0.62.0'
-pod 'FKBusinessKit', :git => 'https://github.com/feng-zhang0712/FKBusinessKit.git', :tag => '0.2.0'
+pod 'FKBusinessKit', :git => 'https://github.com/feng-zhang0712/FKBusinessKit.git', :tag => '0.3.0'
 ```
 
 Local development:

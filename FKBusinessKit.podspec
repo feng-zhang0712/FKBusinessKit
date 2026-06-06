@@ -1,10 +1,10 @@
 Pod::Spec.new do |s|
   s.name = 'FKBusinessKit'
-  s.version = '0.2.0'
-  s.summary = 'FKBusinessKit: iOS business components (TabBarFilter) built on FKKit.'
+  s.version = '0.3.0'
+  s.summary = 'FKBusinessKit: iOS business components (Base, TabBarFilter) built on FKKit.'
   s.description = <<-DESC
-    iOS Swift package for business-oriented UI components such as TabBarFilter,
-    depending on FKCoreKit and FKUIKit from the FKKit family.
+    iOS Swift package for business-oriented UI components such as Base view controller
+    foundations and TabBarFilter, depending on FKCoreKit and FKUIKit from the FKKit family.
   DESC
   s.homepage = 'https://github.com/feng-zhang0712/FKBusinessKit'
   s.license = { :type => 'MIT', :file => 'LICENSE' }

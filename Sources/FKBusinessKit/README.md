@@ -13,6 +13,7 @@ Legacy **BusinessKit** infrastructure (version, analytics, i18n, lifecycle, deep
 | Path | Role |
 |------|------|
 | `FKBusinessKit.swift` | Package module marker; re-exports FKCoreKit + FKUIKit |
+| `Components/Base/` | View controller bases and composition ([README](Components/Base/README.md)) |
 | `Components/TabBarFilter/` | Anchored filter strip ([README](Components/TabBarFilter/README.md)) |
 | `README.md` | This file (excluded from the compile target) |
 

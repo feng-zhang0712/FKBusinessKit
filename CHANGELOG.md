@@ -4,9 +4,22 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-06
+
+### Added
+
+- **Base** — UIKit-first view controller foundations ([component README](Sources/FKBusinessKit/Components/Base/README.md)):
+  - ``FKBaseViewController`` — three-phase build API, first-load hooks, full-page loading/empty/error overlays, keyboard forwarding, navigation bar snapshot/restore (including gradient styles), interactive pop policy (iOS 26+), ``FKToast``, and custom back button.
+  - ``FKBaseTableViewController`` / ``FKBaseCollectionViewController`` — safe-area + ``keyboardLayoutGuide`` pinning, pull-to-refresh and load-more via ``FKRefreshControl``, skeleton placeholder rows, and scroll-embedded ``FKEmptyState``.
+  - ``FKBaseTableViewCell`` / ``FKBaseCollectionViewCell`` — card-style reusable cells with shared ``containerView`` and reuse hooks.
+  - ``FKViewControllerComposite`` — composition bucket (keyboard, navigation chrome, interactive pop, tap-to-dismiss) for controllers that cannot inherit ``FKBaseViewController``.
+  - ``FKBaseSearchIntegration`` — minimal ``UISearchController`` navigation-item wiring.
+  - ``FKBusinessKitBase`` — stable typealiases when legacy FKUIKit Base copies are still visible (FKKit ≤ 0.60).
+  - **FKBusinessKitExamples** — Base hub with view controller, table, collection, composition, and search scenarios.
+
 ### Changed
 
-- Raise minimum FKKit dependency to `0.61.0` (`Package.swift`, `FKBusinessKit.podspec`, README).
+- Raise minimum FKKit dependency to `0.62.0` (`Package.swift`, `FKBusinessKit.podspec`, README).
 
 ## [0.2.0] - 2026-06-02
 
@@ -78,6 +91,7 @@ Tabs that use ``FKTabBarFilterTabPanelContent/panelKind`` still require a non-`n
 
 - Package scope is **new business/composite components** on FKKit. Legacy **BusinessKit** infrastructure (`FKBusinessKit.shared`, version, track, i18n, lifecycle, deeplink, utils) lives in **FKKit** (`FKCoreKit/BusinessKit`) — not in this repository.
 
+[0.3.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.3.0
 [0.2.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.2.0
 [0.1.2]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.1.2
 [0.1.1]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.1.1
