@@ -5,16 +5,26 @@ final class FKBaseTableExamplesHubViewController: UITableViewController {
 
   private enum Section: Int, CaseIterable {
     case basics
+    case keyboard
     case scenarios
+  }
+
+  init() {
+    super.init(style: .insetGrouped)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
   }
 
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "FKBaseTableViewController"
     tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
-    if #available(iOS 15.0, *) {
-      tableView.sectionHeaderTopPadding = 0
-    }
+    tableView.cellLayoutMarginsFollowReadableWidth = true
+    tableView.estimatedRowHeight = 88
+    tableView.rowHeight = UITableView.automaticDimension
   }
 
   override func numberOfSections(in tableView: UITableView) -> Int {
@@ -24,6 +34,7 @@ final class FKBaseTableExamplesHubViewController: UITableViewController {
   override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
     switch Section(rawValue: section)! {
     case .basics: return "Basics"
+    case .keyboard: return "Keyboard"
     case .scenarios: return "List presentation scenarios"
     }
   }
@@ -31,6 +42,7 @@ final class FKBaseTableExamplesHubViewController: UITableViewController {
   override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
     switch Section(rawValue: section)! {
     case .basics: return 1
+    case .keyboard: return 1
     case .scenarios: return FKBaseListDemoScenario.allCases.count
     }
   }
@@ -42,12 +54,16 @@ final class FKBaseTableExamplesHubViewController: UITableViewController {
     case .basics:
       content.text = "Refresh & load-more"
       content.secondaryText = "Pull-to-refresh, pagination footer, prefetch hook."
+    case .keyboard:
+      content.text = "Keyboard avoidance"
+      content.secondaryText = "Bottom UITextField + UITextView rows — scroll down to test."
     case .scenarios:
       let scenario = FKBaseListDemoScenario.allCases[indexPath.row]
       content.text = scenario.title
       content.secondaryText = scenario.subtitle
     }
     content.secondaryTextProperties.color = .secondaryLabel
+    content.secondaryTextProperties.numberOfLines = 0
     cell.contentConfiguration = content
     cell.accessoryType = .disclosureIndicator
     return cell
@@ -59,6 +75,8 @@ final class FKBaseTableExamplesHubViewController: UITableViewController {
     switch Section(rawValue: indexPath.section)! {
     case .basics:
       destination = FKBaseTableBasicsExampleViewController()
+    case .keyboard:
+      destination = FKBaseTableKeyboardExampleViewController()
     case .scenarios:
       destination = FKBaseTableListScenarioExampleViewController(
         scenario: FKBaseListDemoScenario.allCases[indexPath.row]

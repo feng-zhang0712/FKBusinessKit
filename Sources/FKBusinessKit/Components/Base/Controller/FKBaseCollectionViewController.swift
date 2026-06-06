@@ -14,25 +14,27 @@ open class FKBaseCollectionViewController: FKBaseViewController {
   public let collectionView: UICollectionView
 
   public var isPullToRefreshEnabled: Bool = false {
-    didSet { listRefresh.isPullToRefreshEnabled = isPullToRefreshEnabled }
+    didSet { refreshCoordinator.isPullToRefreshEnabled = isPullToRefreshEnabled }
   }
 
   public var isLoadMoreEnabled: Bool = false {
-    didSet { listRefresh.isLoadMoreEnabled = isLoadMoreEnabled }
+    didSet { refreshCoordinator.isLoadMoreEnabled = isLoadMoreEnabled }
   }
 
-  public var pullToRefreshControl: FKRefreshControl? { listRefresh.pullToRefreshControl }
+  public var pullToRefreshControl: FKRefreshControl? { refreshCoordinator.pullToRefreshControl }
 
-  public var loadMoreControl: FKRefreshControl? { listRefresh.loadMoreControl }
+  public var loadMoreControl: FKRefreshControl? { refreshCoordinator.loadMoreControl }
 
-  public var loadMoreState: FKBaseLoadMoreState { listRefresh.loadMoreState }
+  public var loadMoreState: FKBaseLoadMoreState { refreshCoordinator.loadMoreState }
+
+  open override var keyboardFocusScrollView: UIScrollView? { collectionView }
 
   /// Flow layout cast when the controller was created with ``UICollectionViewFlowLayout`` (including the default).
   public var flowLayout: UICollectionViewFlowLayout? {
     collectionView.collectionViewLayout as? UICollectionViewFlowLayout
   }
 
-  private let listRefresh = FKBaseListRefreshCoordinator()
+  private let refreshCoordinator = FKBaseRefreshCoordinator()
 
   // MARK: - Init
 
@@ -65,8 +67,8 @@ open class FKBaseCollectionViewController: FKBaseViewController {
   private func commonCollectionControllerInit() {
     disableScrollViewBounceByDefault = false
     collectionView.translatesAutoresizingMaskIntoConstraints = false
-    listRefresh.isPullToRefreshEnabled = isPullToRefreshEnabled
-    listRefresh.isLoadMoreEnabled = isLoadMoreEnabled
+    refreshCoordinator.isPullToRefreshEnabled = isPullToRefreshEnabled
+    refreshCoordinator.isLoadMoreEnabled = isLoadMoreEnabled
   }
 
   /// Default flow layout: vertical scrolling with estimated sizing-friendly defaults.
@@ -100,10 +102,10 @@ open class FKBaseCollectionViewController: FKBaseViewController {
 
   open override func setupBindings() {
     super.setupBindings()
-    listRefresh.installIfNeeded(on: collectionView) { [weak self] in
+    refreshCoordinator.installIfNeeded(on: collectionView) { [weak self] in
       self?.performPullToRefresh()
     } loadMoreHandler: { [weak self] in
-      self?.listRefresh.handleLoadMoreInvoked {
+      self?.refreshCoordinator.handleLoadMoreInvoked {
         self?.performLoadMore()
       }
     }
@@ -134,19 +136,19 @@ open class FKBaseCollectionViewController: FKBaseViewController {
   // MARK: - Refresh helpers
 
   public func endPullToRefresh(success: Bool) {
-    listRefresh.endPullToRefresh(success: success)
+    refreshCoordinator.endPullToRefresh(success: success)
   }
 
   public func markLoadMoreFinished() {
-    listRefresh.markLoadMoreFinished()
+    refreshCoordinator.markLoadMoreFinished()
   }
 
   public func markLoadMoreNoMoreData() {
-    listRefresh.markLoadMoreNoMoreData()
+    refreshCoordinator.markLoadMoreNoMoreData()
   }
 
   public func markLoadMoreFailed(_ error: Error? = nil) {
-    listRefresh.markLoadMoreFailed(error)
+    refreshCoordinator.markLoadMoreFailed(error)
   }
 
   public func scrollCollectionToTop(animated: Bool) {

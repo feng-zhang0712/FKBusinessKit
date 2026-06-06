@@ -15,6 +15,7 @@ public enum FKBusinessKitBase {
   public typealias ViewController = FKBaseViewController
   public typealias TableViewController = FKBaseTableViewController
   public typealias CollectionViewController = FKBaseCollectionViewController
+  public typealias ScrollViewController = FKBaseScrollViewController
   public typealias SearchIntegration = FKBaseSearchIntegration
   public typealias ListSkeletonReuseIdentifier = FKBaseListSkeletonReuseIdentifier
   public typealias ListSkeletonLayout = FKBaseListSkeletonLayout

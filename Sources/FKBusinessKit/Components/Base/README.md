@@ -17,6 +17,7 @@ Components/Base/
 │   ├── FKBaseViewController.swift         # Root base VC (lifecycle + overlays + composite host)
 │   ├── FKBaseTableViewController.swift    # Single-table specialization + refresh/load-more
 │   ├── FKBaseCollectionViewController.swift
+│   ├── FKBaseScrollViewController.swift   # Scroll view + contentView + optional pull-to-refresh
 │   ├── FKBaseListPresentation.swift       # FKSkeleton / FKEmptyState list helpers
 │   └── FKBaseSearchIntegration.swift      # UISearchController attachment helpers
 ├── Composition/
@@ -32,7 +33,8 @@ Components/Base/
     ├── FKBaseScrollBounce.swift
     ├── FKBaseViewControllerHierarchy.swift
     ├── FKBaseViewController+StateOverlays.swift
-    └── FKBaseListRefreshCoordinator.swift
+    ├── FKBaseScrollKeyboardFocus.swift
+    └── FKBaseRefreshCoordinator.swift
 ```
 
 ---
@@ -54,6 +56,7 @@ flowchart TB
     BVC[FKBaseViewController]
     TBC[FKBaseTableViewController]
     BVC --> TBC
+    BVC --> SVC[FKBaseScrollViewController]
   end
 
   subgraph composition [Composition path]
@@ -133,6 +136,7 @@ Implementation details:
 
 - Observed between `viewDidAppear` and `viewWillDisappear` when **`keyboardObservationEnabled`** is `true` (default).
 - Override **`keyboardWillChange(to:duration:curve:)`** and **`keyboardWillHide(duration:curve:)`** — callbacks are always dispatched on the main queue.
+- **Focus scrolling** — when **`keyboardFocusScrollView`** is non-nil and **`scrollsFirstResponderVisibleOnKeyboardChange`** is `true` (default), ``keyboardWillChange`` scrolls the first responder into view. Scroll/collection subclasses set the hook; plain ``FKBaseViewController`` leaves it `nil` (hook-only). Pair with **`keyboardLayoutGuide`** bottom constraints on scroll subclasses for layout shrink.
 
 #### Configuration reference
 
@@ -145,6 +149,8 @@ Implementation details:
 | `navigationBarStyle` | `.system` | Bar/item appearance |
 | `prefersLargeTitlesWhileVisible` | `nil` | Override large titles; `nil` → snapshot value |
 | `keyboardObservationEnabled` | `true` | Toggle keyboard notifications |
+| `keyboardFocusScrollView` | `nil` | Scroll view for first-responder focus scrolling; set by scroll/collection subclasses |
+| `scrollsFirstResponderVisibleOnKeyboardChange` | `true` | Scroll focused input when `keyboardFocusScrollView` is non-nil |
 | `preferredStatusBarAppearance` | `.default` | Status bar style |
 | `debugLifecycleLoggingEnabled` | `false` | Forward lifecycle to `FKLogger` |
 
@@ -161,15 +167,42 @@ For **list** screens, prefer scroll-embedded empty states and skeleton placehold
 
 ---
 
+### `FKBaseScrollViewController`
+
+Single primary `UIScrollView` with a scrollable **`contentView`**, pinned to the safe area and **`keyboardLayoutGuide`** (iOS 15+). Optional pull-to-refresh via **FKUIKit** `fk_addPullToRefresh`.
+
+**Keyboard avoidance (two layers):**
+
+1. **Layout** — scroll view bottom tracks **`keyboardLayoutGuide.topAnchor`** so the visible area shrinks with the keyboard.
+2. **Focus** — ``FKBaseViewController/keyboardWillChange(to:duration:curve:)`` scrolls the first responder when ``keyboardFocusScrollView`` returns ``scrollView`` (see ``scrollsFirstResponderVisibleOnKeyboardChange``).
+
+**Defaults:**
+
+- Sets **`disableScrollViewBounceByDefault = false`** in `init` so overflow content remains scrollable.
+- **`contentLayoutMargins`** inset the content root inside the scroll view's content layout guide.
+- **`contentInsetAdjustmentBehavior = .never`** — safe-area top is handled by pinning the scroll view to **`safeAreaLayoutGuide`**.
+- Load-more is **not** supported; use table/collection bases for paginated lists.
+
+**Pull-to-refresh:**
+
+- Set **`isPullToRefreshEnabled`** in **`init`** (before `setupBindings()`).
+- Override **`performPullToRefresh()`**; end with **`endPullToRefresh(success:)`**.
+
+Add subviews inside **`contentView`**, not directly on **`scrollView`**.
+
+---
+
 ### `FKBaseTableViewController` / `FKBaseCollectionViewController`
 
 Single primary `UITableView` or `UICollectionView`, pinned to the safe area and **`keyboardLayoutGuide`** (iOS 15+). Optional pull-to-refresh and load-more via **FKUIKit** `fk_addPullToRefresh` / `fk_addLoadMore`.
+
+**Keyboard:** same **`keyboardLayoutGuide`** layout shrink as scroll screens. ``FKBaseCollectionViewController`` sets ``keyboardFocusScrollView`` to its collection view. ``FKBaseTableViewController`` leaves the hook `nil` and relies on ``UITableView``'s built-in editing scroll.
 
 **List defaults:**
 
 - Sets **`disableScrollViewBounceByDefault = false`** in `init` so pull-to-refresh remains ergonomic.
 - Does **not** implement `dataSource` / `delegate` — subclasses assign them (or use diffable data sources).
-- Refresh/load-more wiring is shared via **`FKBaseListRefreshCoordinator`** (Internal).
+- Refresh/load-more wiring is shared via **`FKBaseRefreshCoordinator`** (Internal).
 
 **Refresh / load-more:**
 
@@ -266,7 +299,8 @@ See `Composition/FKViewControllerCompositionProtocols.swift`, `FKViewControllerC
 | Need | Choose |
 |------|--------|
 | Table/collection screen with refresh, skeleton, empty | **`FKBaseTableViewController`** / **`FKBaseCollectionViewController`** |
-| Non-list screen with loading/empty/error overlays | **`FKBaseViewController`** |
+| Form, detail, or settings page with scrollable content | **`FKBaseScrollViewController`** |
+| Non-list screen with loading/empty/error overlays (custom layout) | **`FKBaseViewController`** (+ your keyboard layout if needed) |
 | Only keyboard + nav chrome + tap-to-dismiss | **`FKViewControllerComposite`** on your existing base |
 | Another app base class you cannot change | Composition + **`FKViewControllerBuildPhases`** |
 | Shared card-style cells | **`FKBaseTableViewCell`** / **`FKBaseCollectionViewCell`** + pluggable configure protocols |
@@ -280,6 +314,7 @@ FKBusinessKitExamples → **Base** hub:
 | Scenario | Demonstrates |
 |----------|--------------|
 | ViewController | Overlays, keyboard, nav styles, first-load hooks |
+| Scroll | `FKBaseScrollViewController` — contentView, keyboard avoidance, pull-to-refresh |
 | Table / Collection | Refresh, skeleton, empty/error list states |
 | Composition | Plain `UIViewController` + composite forwarding |
 | Search | `FKBaseSearchIntegration` |

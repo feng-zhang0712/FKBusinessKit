@@ -2,7 +2,7 @@ import FKUIKit
 import UIKit
 
 @MainActor
-final class FKBaseListRefreshCoordinator {
+final class FKBaseRefreshCoordinator {
   var isPullToRefreshEnabled = false
   var isLoadMoreEnabled = false
 
@@ -12,7 +12,11 @@ final class FKBaseListRefreshCoordinator {
 
   private var didInstallControls = false
 
-  func installIfNeeded(on scrollView: UIScrollView, pullHandler: @escaping () -> Void, loadMoreHandler: @escaping () -> Void) {
+  func installIfNeeded(
+    on scrollView: UIScrollView,
+    pullHandler: @escaping () -> Void,
+    loadMoreHandler: (() -> Void)? = nil
+  ) {
     guard !didInstallControls else { return }
     didInstallControls = true
 
@@ -24,7 +28,7 @@ final class FKBaseListRefreshCoordinator {
 
     if isLoadMoreEnabled {
       loadMoreControl = scrollView.fk_addLoadMore {
-        loadMoreHandler()
+        loadMoreHandler?()
       }
     }
   }

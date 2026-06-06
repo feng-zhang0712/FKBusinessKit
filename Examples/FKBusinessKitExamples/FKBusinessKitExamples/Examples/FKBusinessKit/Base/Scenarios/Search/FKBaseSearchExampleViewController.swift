@@ -11,14 +11,16 @@ final class FKBaseSearchExampleViewController: FKBusinessKitBase.ViewController,
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "Search"
+    navigationItem.largeTitleDisplayMode = .never
+    prefersLargeTitlesWhileVisible = false
   }
 
   override func setupUI() {
     super.setupUI()
     searchController.searchResultsUpdater = self
     searchController.obscuresBackgroundDuringPresentation = false
+    searchController.hidesNavigationBarDuringPresentation = false
     searchController.searchBar.placeholder = "Filter the note below"
-    FKBusinessKitBase.SearchIntegration.install(searchController, on: self, hidesNavigationBarDuringPresentation: true)
 
     stack.axis = .vertical
     stack.spacing = 12
@@ -30,6 +32,16 @@ final class FKBaseSearchExampleViewController: FKBusinessKitBase.ViewController,
 
     stack.addArrangedSubview(bodyLabel)
     view.addSubview(stack)
+  }
+
+  override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    guard navigationItem.searchController == nil else { return }
+    FKBusinessKitBase.SearchIntegration.install(
+      searchController,
+      on: self,
+      hidesNavigationBarDuringPresentation: false
+    )
   }
 
   override func setupConstraints() {

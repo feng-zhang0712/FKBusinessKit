@@ -48,7 +48,6 @@ public final class FKViewControllerComposite {
     case let .viewDidAppear(animated):
       appearanceState.onViewDidAppear(animated: animated)
       keyboard.startIfNeeded()
-      navigationChrome.viewDidAppear(on: viewController)
       interactivePopGesture.synchronizeAfterNavigationChromeChange(on: viewController)
 
     case let .viewWillDisappear(animated):
@@ -183,10 +182,6 @@ public final class FKCompositeNavigationChrome {
       snapshot = FKBaseNavigationChromeAppearanceCopying.capture(from: navigationController)
     }
     applyConfiguration(on: viewController, navigationController: navigationController, animated: animated)
-  }
-
-  public func viewDidAppear(on viewController: UIViewController) {
-    _ = viewController
   }
 
   public func viewWillDisappear(on viewController: UIViewController, animated: Bool) {
@@ -331,13 +326,5 @@ public final class FKCompositeTapToDismissKeyboard: NSObject {
     } else if gesture.view != nil {
       view.removeGestureRecognizer(gesture)
     }
-  }
-}
-
-// MARK: - Scroll bounce
-
-public enum FKCompositeScrollBounce {
-  public static func applyRecursively(to root: UIView, enabled: Bool) {
-    FKBaseScrollBounce.applyRecursively(to: root, enabled: enabled)
   }
 }

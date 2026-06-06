@@ -5,16 +5,26 @@ final class FKBaseCollectionExamplesHubViewController: UITableViewController {
 
   private enum Section: Int, CaseIterable {
     case basics
+    case keyboard
     case scenarios
+  }
+
+  init() {
+    super.init(style: .insetGrouped)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
   }
 
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "FKBaseCollectionViewController"
     tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
-    if #available(iOS 15.0, *) {
-      tableView.sectionHeaderTopPadding = 0
-    }
+    tableView.cellLayoutMarginsFollowReadableWidth = true
+    tableView.estimatedRowHeight = 88
+    tableView.rowHeight = UITableView.automaticDimension
   }
 
   override func numberOfSections(in tableView: UITableView) -> Int {
@@ -24,6 +34,7 @@ final class FKBaseCollectionExamplesHubViewController: UITableViewController {
   override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
     switch Section(rawValue: section)! {
     case .basics: return "Basics"
+    case .keyboard: return "Keyboard"
     case .scenarios: return "List presentation scenarios"
     }
   }
@@ -31,6 +42,7 @@ final class FKBaseCollectionExamplesHubViewController: UITableViewController {
   override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
     switch Section(rawValue: section)! {
     case .basics: return 1
+    case .keyboard: return 1
     case .scenarios: return FKBaseListDemoScenario.allCases.count
     }
   }
@@ -42,12 +54,16 @@ final class FKBaseCollectionExamplesHubViewController: UITableViewController {
     case .basics:
       content.text = "Refresh & load-more"
       content.secondaryText = "Two-column flow layout with refresh footer."
+    case .keyboard:
+      content.text = "Keyboard avoidance"
+      content.secondaryText = "Bottom UITextField + UITextView items — scroll down to test."
     case .scenarios:
       let scenario = FKBaseListDemoScenario.allCases[indexPath.row]
       content.text = scenario.title
       content.secondaryText = scenario.subtitle
     }
     content.secondaryTextProperties.color = .secondaryLabel
+    content.secondaryTextProperties.numberOfLines = 0
     cell.contentConfiguration = content
     cell.accessoryType = .disclosureIndicator
     return cell
@@ -59,6 +75,8 @@ final class FKBaseCollectionExamplesHubViewController: UITableViewController {
     switch Section(rawValue: indexPath.section)! {
     case .basics:
       destination = FKBaseCollectionBasicsExampleViewController()
+    case .keyboard:
+      destination = FKBaseCollectionKeyboardExampleViewController()
     case .scenarios:
       destination = FKBaseCollectionListScenarioExampleViewController(
         scenario: FKBaseListDemoScenario.allCases[indexPath.row]

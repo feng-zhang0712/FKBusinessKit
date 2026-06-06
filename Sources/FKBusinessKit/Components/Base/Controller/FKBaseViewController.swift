@@ -107,6 +107,15 @@ open class FKBaseViewController: UIViewController, FKViewControllerCompositeHost
     }
   }
 
+  /// When `true` and ``keyboardFocusScrollView`` is non-nil, scrolls the focused input into view after keyboard frame changes.
+  public var scrollsFirstResponderVisibleOnKeyboardChange: Bool = true
+
+  /// When non-nil, this scroll view's first responder is scrolled above the keyboard on ``keyboardWillChange(to:duration:curve:)``.
+  ///
+  /// ``FKBaseScrollViewController`` and ``FKBaseCollectionViewController`` override this to return their primary scroll view.
+  /// ``FKBaseTableViewController`` leaves the default `nil` and relies on ``UITableView``'s built-in editing scroll.
+  open var keyboardFocusScrollView: UIScrollView? { nil }
+
   /// When non-nil, assigns `UINavigationBar.prefersLargeTitles` while visible (restored when leaving).
   public var prefersLargeTitlesWhileVisible: Bool? {
     didSet {
@@ -222,7 +231,21 @@ open class FKBaseViewController: UIViewController, FKViewControllerCompositeHost
   open func viewDidAppearForTheFirstTime(_ animated: Bool) {}
 
   /// Keyboard frame updates (parsed on the main queue).
-  open func keyboardWillChange(to frame: CGRect, duration: TimeInterval, curve: UIView.AnimationCurve) {}
+  ///
+  /// When ``keyboardFocusScrollView`` is non-nil and ``scrollsFirstResponderVisibleOnKeyboardChange`` is `true`,
+  /// scrolls the current first responder into view after layout catches up with ``keyboardLayoutGuide``.
+  /// Override for custom behavior; call `super` to keep that scrolling, or leave ``keyboardFocusScrollView`` as `nil`
+  /// for hook-only forwarding (the default on plain ``FKBaseViewController`` subclasses).
+  open func keyboardWillChange(to frame: CGRect, duration: TimeInterval, curve: UIView.AnimationCurve) {
+    guard scrollsFirstResponderVisibleOnKeyboardChange, let scrollView = keyboardFocusScrollView else { return }
+    FKBaseScrollKeyboardFocus.scrollFirstResponderAfterKeyboardChange(
+      in: scrollView,
+      hostView: view,
+      keyboardFrame: frame,
+      duration: duration,
+      curve: curve
+    )
+  }
 
   /// Keyboard will hide (parsed on the main queue).
   open func keyboardWillHide(duration: TimeInterval, curve: UIView.AnimationCurve) {}

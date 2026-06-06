@@ -5,6 +5,7 @@ final class FKBaseExamplesHubViewController: UITableViewController {
 
   private enum Row: Int, CaseIterable {
     case viewController
+    case scroll
     case table
     case collection
     case composition
@@ -13,6 +14,7 @@ final class FKBaseExamplesHubViewController: UITableViewController {
     var title: String {
       switch self {
       case .viewController: return "FKBaseViewController"
+      case .scroll: return "FKBaseScrollViewController"
       case .table: return "FKBaseTableViewController"
       case .collection: return "FKBaseCollectionViewController"
       case .composition: return "Composition (no base VC)"
@@ -24,6 +26,8 @@ final class FKBaseExamplesHubViewController: UITableViewController {
       switch self {
       case .viewController:
         return "Lifecycle, overlays, toast, keyboard, nav chrome, loadInitialContent"
+      case .scroll:
+        return "UIScrollView + contentView, keyboard avoidance, pull-to-refresh"
       case .table:
         return "UITableView base, refresh/load-more, skeleton & empty-state scenarios"
       case .collection:
@@ -38,6 +42,7 @@ final class FKBaseExamplesHubViewController: UITableViewController {
     func makeDestination() -> UIViewController {
       switch self {
       case .viewController: return FKBaseViewControllerExampleViewController()
+      case .scroll: return FKBaseScrollViewControllerExampleViewController()
       case .table: return FKBaseTableExamplesHubViewController()
       case .collection: return FKBaseCollectionExamplesHubViewController()
       case .composition: return FKBaseCompositionExampleViewController()
@@ -46,14 +51,22 @@ final class FKBaseExamplesHubViewController: UITableViewController {
     }
   }
 
+  init() {
+    super.init(style: .insetGrouped)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "Base"
     tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
     tableView.cellLayoutMarginsFollowReadableWidth = true
-    if #available(iOS 15.0, *) {
-      tableView.sectionHeaderTopPadding = 0
-    }
+    tableView.estimatedRowHeight = 88
+    tableView.rowHeight = UITableView.automaticDimension
   }
 
   override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -67,6 +80,7 @@ final class FKBaseExamplesHubViewController: UITableViewController {
     content.text = row.title
     content.secondaryText = row.subtitle
     content.secondaryTextProperties.color = .secondaryLabel
+    content.secondaryTextProperties.numberOfLines = 0
     cell.contentConfiguration = content
     cell.accessoryType = .disclosureIndicator
     return cell

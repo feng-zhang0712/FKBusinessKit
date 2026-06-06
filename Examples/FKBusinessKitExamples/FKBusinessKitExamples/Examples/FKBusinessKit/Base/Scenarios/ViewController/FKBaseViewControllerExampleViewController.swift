@@ -104,7 +104,7 @@ final class FKBaseViewControllerExampleViewController: FKBusinessKitBase.TableVi
         ),
         Row(
           title: "Keyboard forwarding",
-          subtitle: "keyboardWillChange / keyboardWillHide (no toast spam)",
+          subtitle: "Bottom UITextField/UITextView — hooks only, no auto avoidance",
           makeDestination: { FKBaseExampleKeyboardViewController() }
         ),
         Row(
@@ -131,6 +131,15 @@ final class FKBaseViewControllerExampleViewController: FKBusinessKitBase.TableVi
     ),
   ]
 
+  init() {
+    super.init(style: .insetGrouped)
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
   override func viewDidLoad() {
     super.viewDidLoad()
     title = "FKBaseViewController"
@@ -154,9 +163,9 @@ final class FKBaseViewControllerExampleViewController: FKBusinessKitBase.TableVi
 
   override func configureTableView(_ tableView: UITableView) {
     super.configureTableView(tableView)
-    if #available(iOS 15.0, *) {
-      tableView.sectionHeaderTopPadding = 8
-    }
+    tableView.cellLayoutMarginsFollowReadableWidth = true
+    tableView.estimatedRowHeight = 88
+    tableView.rowHeight = UITableView.automaticDimension
   }
 
   // MARK: - UITableViewDataSource
@@ -180,6 +189,7 @@ final class FKBaseViewControllerExampleViewController: FKBusinessKitBase.TableVi
     content.text = row.title
     content.secondaryText = row.subtitle
     content.secondaryTextProperties.color = .secondaryLabel
+    content.secondaryTextProperties.numberOfLines = 0
     cell.contentConfiguration = content
     cell.accessoryType = .disclosureIndicator
     return cell
@@ -611,43 +621,73 @@ private final class FKBaseExampleInteractivePopViewController: FKBusinessKitBase
 
 private final class FKBaseExampleKeyboardViewController: FKBusinessKitBase.ViewController {
 
-  private let field = UITextField()
+  private let intro = UILabel()
   private let status = UILabel()
+  private let emailField = UITextField()
+  private let noteField = UITextView()
 
   override func setupUI() {
     super.setupUI()
     title = "Keyboard"
 
+    intro.numberOfLines = 0
+    intro.font = .preferredFont(forTextStyle: .body)
+    intro.textColor = .secondaryLabel
+    intro.text =
+      "FKBaseViewController forwards keyboardWillChange / keyboardWillHide only. Email and note are pinned to the bottom safe area so keyboard overlap is obvious. For form screens, subclass FKBaseScrollViewController instead."
+
     status.numberOfLines = 0
     status.font = .preferredFont(forTextStyle: .footnote)
-    status.textColor = .secondaryLabel
-    status.text = "Focus the field and watch the keyboard height hint below."
-    status.translatesAutoresizingMaskIntoConstraints = false
+    status.textColor = .tertiaryLabel
+    status.text = "Focus a bottom field to observe overlap and the hook callback below."
 
-    field.borderStyle = .roundedRect
-    field.placeholder = "Tap to show keyboard"
-    field.translatesAutoresizingMaskIntoConstraints = false
+    emailField.borderStyle = .roundedRect
+    emailField.placeholder = "Email (UITextField)"
+    emailField.keyboardType = .emailAddress
+    emailField.autocapitalizationType = .none
 
-    view.addSubview(field)
-    view.addSubview(status)
+    noteField.font = .preferredFont(forTextStyle: .body)
+    noteField.layer.borderColor = UIColor.separator.cgColor
+    noteField.layer.borderWidth = 1.0 / UIScreen.main.scale
+    noteField.layer.cornerRadius = 8.0
+    noteField.textContainerInset = UIEdgeInsets(top: 8, left: 4, bottom: 8, right: 4)
+    noteField.text = "Note (UITextView)"
+
+    [intro, status, emailField, noteField].forEach {
+      $0.translatesAutoresizingMaskIntoConstraints = false
+      view.addSubview($0)
+    }
 
     NSLayoutConstraint.activate([
-      field.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-      field.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-      field.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+      intro.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+      intro.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+      intro.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
 
-      status.topAnchor.constraint(equalTo: field.bottomAnchor, constant: 16),
-      status.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-      status.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+      status.topAnchor.constraint(equalTo: intro.bottomAnchor, constant: 12),
+      status.leadingAnchor.constraint(equalTo: intro.leadingAnchor),
+      status.trailingAnchor.constraint(equalTo: intro.trailingAnchor),
+
+      noteField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+      noteField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+      noteField.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+      noteField.heightAnchor.constraint(equalToConstant: 100),
+
+      emailField.leadingAnchor.constraint(equalTo: noteField.leadingAnchor),
+      emailField.trailingAnchor.constraint(equalTo: noteField.trailingAnchor),
+      emailField.bottomAnchor.constraint(equalTo: noteField.topAnchor, constant: -12),
+      emailField.heightAnchor.constraint(equalToConstant: 44),
     ])
   }
 
   override func keyboardWillChange(to frame: CGRect, duration: TimeInterval, curve: UIView.AnimationCurve) {
-    status.text = "keyboardWillChange — visible keyboard height ≈ \(Int(frame.intersection(view.bounds).height)) pt"
+    let screenBounds = view.window?.screen.bounds ?? UIScreen.main.bounds
+    let height = Int(frame.intersection(screenBounds).height)
+    status.text =
+      "keyboardWillChange — keyboard height ≈ \(height) pt. Bottom inputs stay fixed and are covered unless you adjust layout here or use FKBaseScrollViewController."
   }
 
   override func keyboardWillHide(duration: TimeInterval, curve: UIView.AnimationCurve) {
-    status.text = "keyboardWillHide"
+    status.text = "keyboardWillHide — focus a bottom field to compare overlap vs. this hook."
   }
 }
 
