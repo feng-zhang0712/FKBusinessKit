@@ -4,6 +4,30 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-06
+
+### Added
+
+- **Base** — ``FKBaseScrollViewController`` for scrollable form/detail pages: ``contentView`` Auto Layout pattern, ``keyboardLayoutGuide`` pinning, optional pull-to-refresh, and first-responder focus scrolling via ``FKBaseViewController/keyboardFocusScrollView``.
+- **Base** — ``FKBaseScrollKeyboardFocus`` (Internal) and ``keyboardFocusScrollView`` / ``scrollsFirstResponderVisibleOnKeyboardChange`` on ``FKBaseViewController``; ``FKBaseCollectionViewController`` adopts the hook.
+- **Base** — ``FKBusinessKitBase.ScrollViewController`` typealias.
+- **FKBusinessKitExamples** — Base scroll scenario; table/collection keyboard test pages; inset-grouped example hubs.
+
+### Changed
+
+- **Base** — rename ``FKBaseListRefreshCoordinator`` → ``FKBaseRefreshCoordinator``; list controllers expose ``refreshCoordinator`` wiring internally.
+- **Base** — ``FKBaseRefreshCoordinator/installIfNeeded`` makes ``loadMoreHandler`` optional (scroll screens omit load-more).
+- **Base** — ``FKBaseTableViewController/configureTableView`` uses grouped background for ``.grouped`` / ``.insetGrouped`` styles.
+
+### Fixed
+
+- **Base** — keyboard frame visibility check converts screen coordinates before intersecting the host view (fixes missed first-responder scrolling).
+- **FKBusinessKitExamples** — search scenario defers ``UISearchController`` installation and disables large titles to avoid navigation bar glitches on push.
+
+### Removed
+
+- **Base** — unused ``FKCompositeScrollBounce`` façade and no-op ``FKCompositeNavigationChrome/viewDidAppear(on:)``.
+
 ## [0.3.0] - 2026-06-06
 
 ### Added
@@ -91,6 +115,7 @@ Tabs that use ``FKTabBarFilterTabPanelContent/panelKind`` still require a non-`n
 
 - Package scope is **new business/composite components** on FKKit. Legacy **BusinessKit** infrastructure (`FKBusinessKit.shared`, version, track, i18n, lifecycle, deeplink, utils) lives in **FKKit** (`FKCoreKit/BusinessKit`) — not in this repository.
 
+[0.4.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.4.0
 [0.3.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.3.0
 [0.2.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.2.0
 [0.1.2]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.1.2
