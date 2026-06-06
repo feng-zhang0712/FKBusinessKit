@@ -4,6 +4,12 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-07
+
+### Added
+
+- **Base** — ``FKBaseTableViewController/tableViewTopLayoutAnchor`` extension point to pin the primary table below fixed header chrome (e.g. ``FKTabBarFilterHosting/embedStrip(_:in:topAnchor:fixedStripHeight:overlayHost:)``) without overriding the full constraint setup.
+
 ## [0.4.0] - 2026-06-06
 
 ### Added
@@ -115,6 +121,7 @@ Tabs that use ``FKTabBarFilterTabPanelContent/panelKind`` still require a non-`n
 
 - Package scope is **new business/composite components** on FKKit. Legacy **BusinessKit** infrastructure (`FKBusinessKit.shared`, version, track, i18n, lifecycle, deeplink, utils) lives in **FKKit** (`FKCoreKit/BusinessKit`) — not in this repository.
 
+[0.5.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.5.0
 [0.4.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.4.0
 [0.3.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.3.0
 [0.2.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.2.0
