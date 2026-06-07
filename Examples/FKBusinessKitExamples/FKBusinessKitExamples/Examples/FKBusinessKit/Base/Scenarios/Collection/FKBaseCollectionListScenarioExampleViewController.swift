@@ -87,8 +87,8 @@ final class FKBaseCollectionListScenarioExampleViewController: FKBusinessKitBase
       applyListEmptyState(loading)
       FKBaseListMockFetch.run(outcome: .empty) { [weak self] _ in
         guard let self else { return }
-        var empty = FKEmptyStateConfiguration.scenario(.noFavorites)
-        empty.title = "No tiles yet"
+        let empty = FKEmptyStateConfiguration.scenario(.noFavorites)
+          .withTitle("No tiles yet")
         self.applyListEmptyState(empty)
       }
     case .errorRetryThenSuccess:
@@ -167,7 +167,7 @@ final class FKBaseCollectionListScenarioExampleViewController: FKBusinessKitBase
   private func presentErrorState(retryAttempt: Int) {
     var error = FKEmptyStateConfiguration.scenario(.loadFailed)
     if scenario == .errorRetryThenSuccess, retryAttempt == 0 {
-      error.description = "First attempt failed. Tap Retry to simulate a second request."
+      error = error.withDescription("First attempt failed. Tap Retry to simulate a second request.")
     }
     applyListEmptyState(error) { [weak self] _ in
       guard let self else { return }

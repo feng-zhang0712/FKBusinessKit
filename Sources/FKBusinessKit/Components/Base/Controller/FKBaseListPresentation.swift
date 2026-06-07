@@ -104,7 +104,6 @@ public extension FKBaseTableViewController {
   ) {
     hideLoading()
     hideEmptyView()
-    hideErrorView()
     tableView.fk_applyEmptyState(configuration, animated: animated, actionHandler: actionHandler)
   }
 
@@ -179,7 +178,6 @@ public extension FKBaseCollectionViewController {
   ) {
     hideLoading()
     hideEmptyView()
-    hideErrorView()
     collectionView.fk_applyEmptyState(configuration, animated: animated, actionHandler: actionHandler)
   }
 

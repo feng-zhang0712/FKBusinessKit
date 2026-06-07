@@ -36,7 +36,7 @@ It is distributed via **Swift Package Manager (SPM)** and **CocoaPods**. `import
 - **iOS-only** — `platforms: [.iOS(.v15)]` in `Package.swift`.
 - **`Base`** — inheritance-friendly view controller bases and optional composition layer ([component README](Sources/FKBusinessKit/Components/Base/README.md)).
 - **`TabBarFilter`** — anchored filter strip with built-in panel kinds and custom panel support ([component README](Sources/FKBusinessKit/Components/TabBarFilter/README.md)).
-- Depends on **FKCoreKit** and **FKUIKit** (FKKit `0.62.0+`, see [FKKit dependency & versions](#fkit-dependency--versions)).
+- Depends on **FKCoreKit** and **FKUIKit** (FKKit `0.64.0+`, see [FKKit dependency & versions](#fkit-dependency--versions)).
 - GitHub Actions CI: builds on **iOS Simulator**.
 - Example app under [`Examples/FKBusinessKitExamples`](Examples/FKBusinessKitExamples).
 
@@ -58,17 +58,17 @@ FKBusinessKit/
 ## Requirements
 - **iOS 15.0+**
 - Swift **6.0+** / **Xcode 16.2+**
-- **[FKKit](https://github.com/feng-zhang0712/FKKit)** `0.62.0+` — resolved transitively when you depend on **FKBusinessKit** (see below)
+- **[FKKit](https://github.com/feng-zhang0712/FKKit)** `0.64.0+` — resolved transitively when you depend on **FKBusinessKit** (see below)
 
 ## FKKit dependency & versions
 
-`Package.swift` declares FKKit with **`.upToNextMajor(from: "0.62.0")`** (equivalent to `from: "0.62.0"`): consumers resolve **one** FKKit package in the `0.62.0 … < 1.0.0` range — typically the **highest** version that satisfies your app and FKBusinessKit.
+`Package.swift` declares FKKit with **`.upToNextMajor(from: "0.64.0")`** (equivalent to `from: "0.64.0"`): consumers resolve **one** FKKit package in the `0.64.0 … < 1.0.0` range — typically the **highest** version that satisfies your app and FKBusinessKit.
 
 | Topic | Guidance |
 | --- | --- |
-| **Minimum FKKit** | `0.62.0` — required for TabBarFilter (`FKSheetPresentationController`, FKUIKit `FKTabBar` `itemInsets` / accessory APIs, etc.). Bumped in `Package.swift` when this repo adopts newer FKKit APIs. |
+| **Minimum FKKit** | `0.64.0` — required for TabBarFilter (`FKSheetPresentationController`, FKUIKit `FKTabBar` `itemInsets` / accessory APIs, etc.). Bumped in `Package.swift` when this repo adopts newer FKKit APIs. |
 | **App adds only FKBusinessKit** | FKKit is pulled in transitively; no duplicate modules or import conflicts. |
-| **App also adds FKUIKit** | Fine for UI-heavy targets. Use the **same** FKKit package URL and a **lower bound ≥ `0.62.0`** so SPM picks a single resolved version. |
+| **App also adds FKUIKit** | Fine for UI-heavy targets. Use the **same** FKKit package URL and a **lower bound ≥ `0.64.0`** so SPM picks a single resolved version. |
 | **Staying current** | In your app: **File → Packages → Update to Latest Package Versions**, or `swift package update`. |
 | **Maintainers** | After raising the minimum in `Package.swift`, update `FKBusinessKit.podspec` and this README. |
 
@@ -77,7 +77,7 @@ FKBusinessKit/
 ### Xcode
 1. Add **FKBusinessKit**: `https://github.com/feng-zhang0712/FKBusinessKit.git` (from `0.5.0`)
 2. Link **`FKBusinessKit`** to your app target (FKKit is resolved transitively).
-3. **Optional:** also add **FKKit** (`from: "0.62.0"`) if many targets use `FKUIKit` directly without `import FKBusinessKit`.
+3. **Optional:** also add **FKKit** (`from: "0.64.0"`) if many targets use `FKUIKit` directly without `import FKBusinessKit`.
 
 ### Package.swift (typical app)
 ```swift
@@ -97,7 +97,7 @@ targets: [
 ### Package.swift (app also depends on FKKit directly)
 ```swift
 dependencies: [
-  .package(url: "https://github.com/feng-zhang0712/FKKit.git", from: "0.62.0"),
+  .package(url: "https://github.com/feng-zhang0712/FKKit.git", from: "0.64.0"),
   .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.5.0"),
 ],
 targets: [
@@ -124,7 +124,7 @@ dependencies: [
 ```ruby
 platform :ios, '15.0'
 
-pod 'FKCoreKit',     :git => 'https://github.com/feng-zhang0712/FKKit.git', :tag => '0.62.0'
+pod 'FKCoreKit',     :git => 'https://github.com/feng-zhang0712/FKKit.git', :tag => '0.64.0'
 pod 'FKBusinessKit', :git => 'https://github.com/feng-zhang0712/FKBusinessKit.git', :tag => '0.5.0'
 ```
 

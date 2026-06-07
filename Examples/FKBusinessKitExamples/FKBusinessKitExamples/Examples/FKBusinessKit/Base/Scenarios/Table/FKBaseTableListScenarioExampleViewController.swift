@@ -78,13 +78,13 @@ final class FKBaseTableListScenarioExampleViewController: FKBusinessKitBase.Tabl
       }
     case .emptyStateLoadingTransition:
       var loading = FKEmptyStateConfiguration(phase: .loading, type: .loading, title: "Loading items…")
-      loading.loadingMessage = "Fetching the latest rows"
+      loading.content.loadingMessage = "Fetching the latest rows"
       applyListEmptyState(loading)
       FKBaseListMockFetch.run(outcome: .empty) { [weak self] _ in
         guard let self else { return }
-        var empty = FKEmptyStateConfiguration.scenario(.noSearchResult)
-        empty.title = "Nothing here yet"
-        empty.description = "The request succeeded but returned no rows."
+        let empty = FKEmptyStateConfiguration.scenario(.noSearchResult)
+          .withTitle("Nothing here yet")
+          .withDescription("The request succeeded but returned no rows.")
         self.applyListEmptyState(empty)
       }
     case .errorRetryThenSuccess:
@@ -138,9 +138,9 @@ final class FKBaseTableListScenarioExampleViewController: FKBusinessKitBase.Tabl
     case .empty:
       rows = []
       tableView.reloadData()
-      var empty = FKEmptyStateConfiguration.scenario(.noSearchResult)
-      empty.title = "No items"
-      empty.description = "Try adjusting filters or check back later."
+      let empty = FKEmptyStateConfiguration.scenario(.noSearchResult)
+        .withTitle("No items")
+        .withDescription("Try adjusting filters or check back later.")
       syncListEmptyState(itemCount: 0, emptyConfiguration: empty)
       if isPullRefresh { endPullToRefresh(success: true) }
     case .noNetwork:
@@ -166,7 +166,7 @@ final class FKBaseTableListScenarioExampleViewController: FKBusinessKitBase.Tabl
   private func presentErrorState(retryAttempt: Int) {
     var error = FKEmptyStateConfiguration.scenario(.loadFailed)
     if scenario == .errorRetryThenSuccess, retryAttempt == 0 {
-      error.description = "First attempt failed. Tap Retry to simulate a second request."
+      error = error.withDescription("First attempt failed. Tap Retry to simulate a second request.")
     }
     applyListEmptyState(error) { [weak self] _ in
       guard let self else { return }

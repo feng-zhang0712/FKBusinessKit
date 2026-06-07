@@ -484,6 +484,12 @@ private final class FKBaseExampleStateOverlaysViewController: FKBusinessKitBase.
 
   private let stack = UIStackView()
 
+  override var stateOverlayTopLayoutAnchor: NSLayoutYAxisAnchor {
+    stack.bottomAnchor
+  }
+
+  override var stateOverlayTopInset: CGFloat { 8 }
+
   override func setupUI() {
     super.setupUI()
     title = "State views"
