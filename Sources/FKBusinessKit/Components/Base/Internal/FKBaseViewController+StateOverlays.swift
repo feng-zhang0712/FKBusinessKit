@@ -59,31 +59,60 @@ extension FKBaseViewController {
     }
   }
 
+  // MARK: - State overlay layout
+
+  /// Pins ``emptyStateView`` below ``stateOverlayTopLayoutAnchor``. Called from ``setupConstraints()``.
+  func installStateOverlayConstraintsIfNeeded() {
+    guard !hasInstalledStateOverlayConstraints else { return }
+    hasInstalledStateOverlayConstraints = true
+    NSLayoutConstraint.activate([
+      emptyStateView.topAnchor.constraint(equalTo: stateOverlayTopLayoutAnchor, constant: stateOverlayTopInset),
+      emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      emptyStateView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+    ])
+  }
+
   // MARK: - Private setup
 
-  /// Adds and constrains the loading indicator used by `showLoading()` / `hideLoading()`.
+  /// Adds the loading indicator used by `showLoading()` / `hideLoading()` (below ``setupUI()`` content).
   private func setupLoadingView() {
     loadingView.translatesAutoresizingMaskIntoConstraints = false
     loadingView.hidesWhenStopped = true
     loadingView.isHidden = true
-    view.addSubview(loadingView)
+    view.insertSubview(loadingView, at: 0)
     NSLayoutConstraint.activate([
       loadingView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
       loadingView.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
     ])
   }
 
-  /// Adds and constrains the shared empty/error overlay view.
+  /// Adds the shared empty/error overlay view (below ``setupUI()`` content; constraints in ``setupConstraints()``).
   private func setupStateViews() {
     emptyStateView.translatesAutoresizingMaskIntoConstraints = false
     emptyStateView.isHidden = true
-    view.addSubview(emptyStateView)
+    emptyStateView.alpha = 0
+    view.insertSubview(emptyStateView, at: 0)
+  }
 
-    NSLayoutConstraint.activate([
-      emptyStateView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-      emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-      emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-      emptyStateView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-    ])
+  /// Presents the shared ``emptyStateView`` overlay.
+  ///
+  /// Matches ``UIView/fk_applyEmptyState`` visibility (`alpha` + `isHidden`) but keeps the view **below**
+  /// subviews added in ``setupUI()`` so fixed chrome stays interactive.
+  func revealStateOverlay(
+    _ configuration: FKEmptyStateConfiguration,
+    actionHandler: ((FKEmptyStateAction) -> Void)? = nil
+  ) {
+    emptyStateView.actionHandler = actionHandler
+    emptyStateView.apply(configuration)
+    emptyStateView.isHidden = false
+    emptyStateView.alpha = 1
+  }
+
+  /// Hides the shared ``emptyStateView`` overlay and clears any action handler.
+  func concealStateOverlay() {
+    emptyStateView.isHidden = true
+    emptyStateView.alpha = 0
+    emptyStateView.actionHandler = nil
   }
 }

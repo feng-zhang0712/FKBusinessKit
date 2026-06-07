@@ -123,6 +123,21 @@ open class FKBaseViewController: UIViewController, FKViewControllerCompositeHost
     }
   }
 
+  /// Top layout anchor for the shared ``emptyStateView`` used by ``showEmptyView()``, ``showErrorView()``, and related helpers.
+  ///
+  /// Defaults to the safe-area top. Override after adding fixed chrome in ``setupUI()`` (e.g. a filter strip
+  /// or demo controls) so the overlay fills the **content region below** that chrome.
+  /// ``setupUI()`` runs before ``setupConstraints()``, so anchors from views created in ``setupUI()`` are valid here.
+  ///
+  /// The overlay is inserted **below** ``setupUI()`` subviews in the z-order so chrome and navigation remain
+  /// interactive; list screens should prefer scroll-embedded empty states (``applyListEmptyState``) instead.
+  open var stateOverlayTopLayoutAnchor: NSLayoutYAxisAnchor {
+    view.safeAreaLayoutGuide.topAnchor
+  }
+
+  /// Optional top inset applied after ``stateOverlayTopLayoutAnchor`` when pinning ``emptyStateView``.
+  open var stateOverlayTopInset: CGFloat { 0 }
+
   /// Optional hook for analytics or diagnostics without coupling to a concrete SDK.
   public var logHandler: (@MainActor (String, [String: String]) -> Void)?
 
@@ -146,6 +161,7 @@ open class FKBaseViewController: UIViewController, FKViewControllerCompositeHost
   let loadingView = UIActivityIndicatorView(style: .large)
   let emptyStateView = FKEmptyStateView()
   var hasPerformedBaseSetup = false
+  var hasInstalledStateOverlayConstraints = false
 
   // MARK: - Init
 
@@ -215,7 +231,9 @@ open class FKBaseViewController: UIViewController, FKViewControllerCompositeHost
   open func setupUI() {}
 
   /// Activates layout constraints for views created in ``setupUI()``.
-  open func setupConstraints() {}
+  open func setupConstraints() {
+    installStateOverlayConstraintsIfNeeded()
+  }
 
   /// Binds view models, user actions, and subscriptions.
   open func setupBindings() {}
@@ -277,10 +295,29 @@ open class FKBaseViewController: UIViewController, FKViewControllerCompositeHost
 
   // MARK: - Public UI helpers
 
+  /// Builds a content-region ``FKEmptyStateConfiguration`` for ``showEmptyView()`` / ``showErrorView()``.
+  private func makeContentAreaStateConfiguration(
+    phase: FKEmptyStatePhase,
+    type: FKEmptyStateType,
+    title: String,
+    primaryActionTitle: String? = nil,
+    primaryActionID: String = "retry"
+  ) -> FKEmptyStateConfiguration {
+    var configuration = FKEmptyStateConfiguration(
+      phase: phase,
+      type: type,
+      content: FKEmptyStateContentConfiguration(title: title),
+      layout: FKEmptyStateLayoutConfiguration(context: .section)
+    )
+    if let primaryActionTitle, !primaryActionTitle.isEmpty {
+      configuration.actions = .primary(primaryActionTitle, id: primaryActionID)
+    }
+    return configuration
+  }
+
   /// Shows the loading indicator and hides empty/error overlays.
   public func showLoading() {
-    hideEmptyView()
-    hideErrorView()
+    concealStateOverlay()
     loadingView.startAnimating()
     loadingView.isHidden = false
   }
@@ -291,56 +328,47 @@ open class FKBaseViewController: UIViewController, FKViewControllerCompositeHost
     loadingView.isHidden = true
   }
 
-  /// Shows a full-screen empty state overlay.
+  /// Shows an empty-state overlay in the content region below ``stateOverlayTopLayoutAnchor``.
+  ///
+  /// The overlay sits under subviews added in ``setupUI()``; override ``stateOverlayTopLayoutAnchor`` when
+  /// fixed chrome should stay visible and tappable above the empty state.
   public func showEmptyView(message: String = "No content available.") {
     hideLoading()
-    hideErrorView()
-    let configuration = FKEmptyStateConfiguration(
-      phase: .empty,
-      type: .empty,
-      context: .fullPage,
-      title: message,
-      isImageHidden: true,
-      isDescriptionHidden: true,
-      isButtonHidden: true
+    concealStateOverlay()
+    revealStateOverlay(
+      makeContentAreaStateConfiguration(phase: .empty, type: .empty, title: message)
     )
-    emptyStateView.apply(configuration)
-    emptyStateView.isHidden = false
   }
 
   /// Hides the empty state overlay.
   public func hideEmptyView() {
-    emptyStateView.isHidden = true
+    concealStateOverlay()
   }
 
-  /// Shows a full-screen error overlay with an optional retry action.
+  /// Shows an error overlay with an optional retry action in the content region below ``stateOverlayTopLayoutAnchor``.
   public func showErrorView(
     message: String = "Something went wrong.",
     retryTitle: String? = nil,
     retryHandler: (@MainActor () -> Void)? = nil
   ) {
     hideLoading()
-    hideEmptyView()
+    concealStateOverlay()
     let showsRetry = retryTitle != nil && retryHandler != nil
-    let configuration = FKEmptyStateConfiguration(
+    let configuration = makeContentAreaStateConfiguration(
       phase: showsRetry ? .error : .empty,
       type: .error,
-      context: .fullPage,
       title: message,
-      buttonStyle: FKEmptyStateButtonStyle(title: retryTitle),
-      isImageHidden: true,
-      isDescriptionHidden: true,
-      isButtonHidden: !showsRetry
+      primaryActionTitle: showsRetry ? retryTitle : nil
     )
-    emptyStateView.actionHandler = showsRetry ? { _ in retryHandler?() } : nil
-    emptyStateView.apply(configuration)
-    emptyStateView.isHidden = false
+    revealStateOverlay(
+      configuration,
+      actionHandler: showsRetry ? { _ in retryHandler?() } : nil
+    )
   }
 
   /// Hides the error overlay.
   public func hideErrorView() {
-    emptyStateView.isHidden = true
-    emptyStateView.actionHandler = nil
+    concealStateOverlay()
   }
 
   /// Presents a short banner using ``FKToast`` defaults.

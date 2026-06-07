@@ -153,17 +153,21 @@ Implementation details:
 | `scrollsFirstResponderVisibleOnKeyboardChange` | `true` | Scroll focused input when `keyboardFocusScrollView` is non-nil |
 | `preferredStatusBarAppearance` | `.default` | Status bar style |
 | `debugLifecycleLoggingEnabled` | `false` | Forward lifecycle to `FKLogger` |
+| `stateOverlayTopLayoutAnchor` | safe-area top | Top of the shared empty/error overlay |
+| `stateOverlayTopInset` | `0` | Extra inset below ``stateOverlayTopLayoutAnchor`` |
 
 #### State overlays
 
 | API | Behavior |
 |-----|----------|
 | `showLoading()` / `hideLoading()` | Centered `UIActivityIndicatorView`; hides empty/error |
-| `showEmptyView(message:)` | Full-page FKEmptyState (empty phase) |
-| `showErrorView(message:retryTitle:retryHandler:)` | Full-page FKEmptyState (error phase, optional retry) |
+| `showEmptyView(message:)` | Content-region `FKEmptyState` (empty phase) below ``stateOverlayTopLayoutAnchor`` |
+| `showErrorView(message:retryTitle:retryHandler:)` | Content-region `FKEmptyState` (error phase, optional retry) |
 | `showToast(_:)` | Short banner via `FKToast` |
 
-For **list** screens, prefer scroll-embedded empty states and skeleton placeholders (see below) instead of full-page overlays.
+**Layout contract:** ``stateOverlayTopLayoutAnchor`` (default: safe-area top) and ``stateOverlayTopInset`` pin the shared overlay. The overlay is inserted **below** subviews added in ``setupUI()`` so fixed chrome (filter strips, demo controls) stays tappable. Override the top anchor when chrome should remain visible above empty/error states.
+
+For **list** screens, prefer scroll-embedded empty states (`applyListEmptyState`) and skeleton placeholders (see below) instead of these controller-level overlays.
 
 ---
 
@@ -194,7 +198,7 @@ Add subviews inside **`contentView`**, not directly on **`scrollView`**.
 
 ### `FKBaseTableViewController` / `FKBaseCollectionViewController`
 
-Single primary `UITableView` or `UICollectionView`, pinned to the safe area and **`keyboardLayoutGuide`** (iOS 15+). Optional pull-to-refresh and load-more via **FKUIKit** `fk_addPullToRefresh` / `fk_addLoadMore`.
+Single primary `UITableView` or `UICollectionView`, pinned below ``FKBaseTableViewController/tableViewTopLayoutAnchor`` (default: safe area top) and **`keyboardLayoutGuide`** (iOS 15+). Optional pull-to-refresh and load-more via **FKUIKit** `fk_addPullToRefresh` / `fk_addLoadMore`.
 
 **Keyboard:** same **`keyboardLayoutGuide`** layout shrink as scroll screens. ``FKBaseCollectionViewController`` sets ``keyboardFocusScrollView`` to its collection view. ``FKBaseTableViewController`` leaves the hook `nil` and relies on ``UITableView``'s built-in editing scroll.
 
