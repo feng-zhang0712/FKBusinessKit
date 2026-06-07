@@ -4,6 +4,23 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-07
+
+### Added
+
+- **Base** — ``FKBaseViewController/stateOverlayTopLayoutAnchor`` and ``stateOverlayTopInset`` to pin shared empty/error overlays below fixed chrome while keeping ``setupUI()`` subviews interactive.
+
+### Changed
+
+- Raise minimum FKKit dependency to `0.64.0` (`Package.swift`, `FKBusinessKit.podspec`, README) for layered ``FKEmptyStateConfiguration`` (``content`` / ``layout`` / ``actions``).
+- **Base** — ``showEmptyView()`` / ``showErrorView()`` build configurations via nested FKEmptyState APIs (``FKEmptyStateContentConfiguration``, ``FKEmptyStateActionSet``) instead of removed flat properties.
+
+### Fixed
+
+- **Base** — state overlay visibility sets ``FKEmptyStateView`` `alpha` to match ``UIView/fk_applyEmptyState`` (fixes invisible empty/error overlays after FKKit 0.64).
+- **Base** — state overlays stay below ``setupUI()`` subviews in z-order (no longer cover filter strips or demo controls); constraints install in ``setupConstraints()`` after chrome is created.
+- **FKBusinessKitExamples** — list scenarios and state overlay demo updated for FKEmptyState 0.64 fluent helpers.
+
 ## [0.5.0] - 2026-06-07
 
 ### Added
@@ -121,6 +138,7 @@ Tabs that use ``FKTabBarFilterTabPanelContent/panelKind`` still require a non-`n
 
 - Package scope is **new business/composite components** on FKKit. Legacy **BusinessKit** infrastructure (`FKBusinessKit.shared`, version, track, i18n, lifecycle, deeplink, utils) lives in **FKKit** (`FKCoreKit/BusinessKit`) — not in this repository.
 
+[0.6.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.6.0
 [0.5.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.5.0
 [0.4.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.4.0
 [0.3.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.3.0
