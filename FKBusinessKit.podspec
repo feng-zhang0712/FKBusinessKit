@@ -15,6 +15,6 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.source_files = 'Sources/FKBusinessKit/**/*.swift'
-  s.dependency 'FKCoreKit', '~> 0.64.0'
-  s.dependency 'FKUIKit', '~> 0.64.0'
+  s.dependency 'FKCoreKit', '~> 0.67.0'
+  s.dependency 'FKUIKit', '~> 0.67.0'
 end
