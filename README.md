@@ -36,6 +36,7 @@ It is distributed via **Swift Package Manager (SPM)** and **CocoaPods**. `import
 - **iOS-only** — `platforms: [.iOS(.v15)]` in `Package.swift`.
 - **`Base`** — inheritance-friendly view controller bases and optional composition layer ([component README](Sources/FKBusinessKit/Components/Base/README.md)).
 - **`TabBarFilter`** — anchored filter strip with built-in panel kinds and custom panel support ([component README](Sources/FKBusinessKit/Components/TabBarFilter/README.md)).
+- **Widgets integration** — compose FKUIKit Widgets with Base/TabBarFilter ([design fragment 中文](docs/FKWidgets-Integration_DESIGN.zh-CN.md)).
 - Depends on **FKCoreKit** and **FKUIKit** (FKKit `0.64.0+`, see [FKKit dependency & versions](#fkit-dependency--versions)).
 - GitHub Actions CI: builds on **iOS Simulator**.
 - Example app under [`Examples/FKBusinessKitExamples`](Examples/FKBusinessKitExamples).
@@ -47,6 +48,8 @@ FKBusinessKit/
 ├─ Package.swift
 ├─ FKBusinessKit.podspec
 ├─ scripts/
+├─ docs/
+│  └─ FKWidgets-Integration_DESIGN.zh-CN.md
 ├─ Sources/
 │  └─ FKBusinessKit/
 │     ├─ FKBusinessKit.swift    # Module marker (extend with new components here)

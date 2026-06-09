@@ -15,6 +15,7 @@ Legacy **BusinessKit** infrastructure (version, analytics, i18n, lifecycle, deep
 | `FKBusinessKit.swift` | Package module marker; re-exports FKCoreKit + FKUIKit |
 | `Components/Base/` | View controller bases and composition ([README](Components/Base/README.md)) |
 | `Components/TabBarFilter/` | Anchored filter strip ([README](Components/TabBarFilter/README.md)) |
+| `docs/FKWidgets-Integration_DESIGN.zh-CN.md` | FKUIKit Widgets 组合用法设计片段（中文） |
 | `README.md` | This file (excluded from the compile target) |
 
 Recommended layout for new work (match FKUIKit conventions when adding UI):
