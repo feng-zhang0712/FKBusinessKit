@@ -23,6 +23,7 @@ final class FKTabBarFilterViewContentExampleViewController: UIViewController {
           label.numberOfLines = 0
           label.textAlignment = .center
           label.translatesAutoresizingMaskIntoConstraints = false
+          container.translatesAutoresizingMaskIntoConstraints = false
           container.addSubview(label)
           NSLayoutConstraint.activate([
             label.topAnchor.constraint(equalTo: container.topAnchor, constant: 20),

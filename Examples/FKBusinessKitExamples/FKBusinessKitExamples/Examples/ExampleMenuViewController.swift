@@ -5,12 +5,15 @@ import FKBusinessKit
 final class ExampleMenuViewController: UITableViewController {
   private enum Row: Int, CaseIterable {
     case base
+    case cellKit
     case tabBarFilter
 
     var title: String {
       switch self {
       case .base:
         return "Base"
+      case .cellKit:
+        return "CellKit"
       case .tabBarFilter:
         return "TabBarFilter"
       }
@@ -20,6 +23,8 @@ final class ExampleMenuViewController: UITableViewController {
       switch self {
       case .base:
         return "FKBaseViewController, table/collection bases, composition, and search integration."
+      case .cellKit:
+        return "Business list cells, feed rows, collection tiles, ListKit glue, and integration demos."
       case .tabBarFilter:
         return "FKTabBarFilterController, anchoring, and panel component recipes."
       }
@@ -29,6 +34,11 @@ final class ExampleMenuViewController: UITableViewController {
       switch self {
       case .base:
         return FKBaseExamplesHubViewController()
+      case .cellKit:
+        return FKCellKitGroupedListHubViewController(
+          title: "CellKit",
+          sections: FKCellKitExampleCatalog.rootSections
+        )
       case .tabBarFilter:
         return FKTabBarFilterExamplesHubViewController()
       }

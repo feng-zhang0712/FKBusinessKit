@@ -2,9 +2,9 @@
 
 import PackageDescription
 
-/// Lowest FKKit tag this package compiles against (TabBarFilter → `FKSheetPresentationController` / `FKUIKit`; Base → FKEmptyState 0.64 layered configuration).
+/// Lowest FKKit tag this package compiles against (ListKit v4, Widgets, TabBarFilter sheet APIs).
 /// Raise when adopting APIs from a newer FKKit release; keep `FKBusinessKit.podspec` FKCoreKit/FKUIKit deps in sync.
-private let fkKitMinimumVersion = Version(0, 67, 0)
+private let fkKitMinimumVersion = Version(0, 71, 0)
 
 let package = Package(
   name: "FKBusinessKit",
@@ -34,6 +34,7 @@ let package = Package(
         "README.md",
         "Components/TabBarFilter/README.md",
         "Components/Base/README.md",
+        "Components/CellKit/README.md",
       ]
     ),
   ],

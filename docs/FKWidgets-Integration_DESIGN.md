@@ -4,7 +4,7 @@ FKBusinessKit 如何**组合** FKKit **FKUIKit Widgets**（小组件库）的指
 
 **文档类型：** 设计片段（对 FKBusinessKit 实现者具有规范约束力；**非** Widgets 本体 API 规范）  
 **状态：** 草案  
-**Widgets 本体规范：** [FKKit `FKSmallComponents_DESIGN.zh-CN.md`](https://github.com/feng-zhang0712/FKKit/blob/develop/docs/FKSmallComponents_DESIGN.zh-CN.md) 及下属模块设计文档  
+**Widgets 本体规范：** [FKKit `FKSmallComponents_DESIGN.md`](https://github.com/feng-zhang0712/FKKit/blob/develop/docs/FKSmallComponents_DESIGN.md) 及下属模块设计文档  
 **FKBusinessKit 前提：** `import FKBusinessKit`（re-export `FKCoreKit` + `FKUIKit`）
 
 ---
@@ -363,8 +363,8 @@ Examples **必须** `import FKBusinessKit`，演示 Business 编排而非复制 
 
 ## 相关文档（FKKit 仓库）
 
-- [FKSmallComponents_DESIGN.zh-CN.md](https://github.com/feng-zhang0712/FKKit/blob/develop/docs/FKSmallComponents_DESIGN.zh-CN.md)
-- [FKChip-FKTag-FKChipGroup_DESIGN.zh-CN.md](https://github.com/feng-zhang0712/FKKit/blob/develop/docs/FKChip-FKTag-FKChipGroup_DESIGN.zh-CN.md)
-- [FKAvatar-FKAvatarGroup-FKPresenceIndicator_DESIGN.zh-CN.md](https://github.com/feng-zhang0712/FKKit/blob/develop/docs/FKAvatar-FKAvatarGroup-FKPresenceIndicator_DESIGN.zh-CN.md)
+- [FKSmallComponents_DESIGN.md](https://github.com/feng-zhang0712/FKKit/blob/develop/docs/FKSmallComponents_DESIGN.md)
+- [FKChip-FKTag-FKChipGroup_DESIGN.md](https://github.com/feng-zhang0712/FKKit/blob/develop/docs/FKChip-FKTag-FKChipGroup_DESIGN.md)
+- [FKAvatar-FKAvatarGroup-FKPresenceIndicator_DESIGN.md](https://github.com/feng-zhang0712/FKKit/blob/develop/docs/FKAvatar-FKAvatarGroup-FKPresenceIndicator_DESIGN.md)
 - [FKBusinessKit Base README](../Sources/FKBusinessKit/Components/Base/README.md)
 - [FKBusinessKit TabBarFilter README](../Sources/FKBusinessKit/Components/TabBarFilter/README.md)
