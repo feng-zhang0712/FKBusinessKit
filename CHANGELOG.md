@@ -4,6 +4,23 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-17
+
+### Added
+
+- **CellKit** — business composite UITableViewCell / UICollectionViewCell templates with ListKit registration glue ([component README](Sources/FKBusinessKit/Components/CellKit/README.md)):
+  - 19 table cells (user/order/notification lists, feed content and video, address/payment selection, comment thread, timeline, search/review, cart, file attachment, interactive rows, and skeleton placeholders).
+  - 2 collection cells (product grid, media tile) plus collection skeleton tiles.
+  - `FKCellKitListRegistration`, `FKCellKitListItemFactory`, `FKCellKitDefaults`, visibility/video forwarding, dynamic height estimators, and SwiftUI representables.
+  - `FKCellKitDiffableTableViewController` / `FKCellKitDiffableCollectionViewController` with opt-in full CellKit registration.
+- **FKBusinessKitExamples** — CellKit catalog and scenarios (ListKit, Base table, feed, collection grid, TabBarFilter integration, skeleton, SwiftUI host, visibility/prefetch).
+- Design docs: [FKCellKit_DESIGN.md](docs/FKCellKit_DESIGN.md), [FKWidgets-Integration_DESIGN.md](docs/FKWidgets-Integration_DESIGN.md).
+
+### Changed
+
+- Raise minimum FKKit dependency to `0.71.0` (`Package.swift`, `FKBusinessKit.podspec`, README) for ListKit v4, Widgets, and TabBarFilter sheet APIs.
+- **TabBarFilter** — `FKTabBarFilterViewWrappingController` compatibility updates for FKUIKit TabBar layout APIs.
+
 ## [0.6.0] - 2026-06-07
 
 ### Added
@@ -138,6 +155,7 @@ Tabs that use ``FKTabBarFilterTabPanelContent/panelKind`` still require a non-`n
 
 - Package scope is **new business/composite components** on FKKit. Legacy **BusinessKit** infrastructure (`FKBusinessKit.shared`, version, track, i18n, lifecycle, deeplink, utils) lives in **FKKit** (`FKCoreKit/BusinessKit`) — not in this repository.
 
+[0.7.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.7.0
 [0.6.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.6.0
 [0.5.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.5.0
 [0.4.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.4.0

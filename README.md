@@ -1,7 +1,7 @@
 # FKBusinessKit
 
 [![iOS](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
-[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.6.0)
+[![Version](https://img.shields.io/badge/version-0.7.0-blue.svg)](https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.7.0)
 [![Swift](https://img.shields.io/badge/Swift-6.0%2B-orange.svg)](https://swift.org/)
 [![SPM](https://img.shields.io/badge/SPM-supported-brightgreen.svg)](https://swift.org/package-manager/)
 [![CocoaPods](https://img.shields.io/badge/CocoaPods-supported-ee3322.svg)](https://cocoapods.org/)
@@ -36,7 +36,8 @@ It is distributed via **Swift Package Manager (SPM)** and **CocoaPods**. `import
 - **iOS-only** — `platforms: [.iOS(.v15)]` in `Package.swift`.
 - **`Base`** — inheritance-friendly view controller bases and optional composition layer ([component README](Sources/FKBusinessKit/Components/Base/README.md)).
 - **`TabBarFilter`** — anchored filter strip with built-in panel kinds and custom panel support ([component README](Sources/FKBusinessKit/Components/TabBarFilter/README.md)).
-- **Widgets integration** — compose FKUIKit Widgets with Base/TabBarFilter ([design fragment 中文](docs/FKWidgets-Integration_DESIGN.md)).
+- **`CellKit`** — business list and collection cells with ListKit registration glue ([component README](Sources/FKBusinessKit/Components/CellKit/README.md)).
+- **Widgets integration** — compose FKUIKit Widgets with Base/TabBarFilter/CellKit ([design fragment 中文](docs/FKWidgets-Integration_DESIGN.md)).
 - Depends on **FKCoreKit** and **FKUIKit** (FKKit `0.71.0+`, see [FKKit dependency & versions](#fkit-dependency--versions)).
 - GitHub Actions CI: builds on **iOS Simulator**.
 - Example app under [`Examples/FKBusinessKitExamples`](Examples/FKBusinessKitExamples).
@@ -54,6 +55,7 @@ FKBusinessKit/
 ├─ Sources/
 │  └─ FKBusinessKit/
 │     ├─ FKBusinessKit.swift    # Module marker (extend with new components here)
+│     ├─ Components/            # Base · TabBarFilter · CellKit
 │     └─ README.md
 └─ Examples/
    └─ FKBusinessKitExamples/
@@ -79,14 +81,14 @@ FKBusinessKit/
 ## Installation (SPM)
 
 ### Xcode
-1. Add **FKBusinessKit**: `https://github.com/feng-zhang0712/FKBusinessKit.git` (from `0.6.0`)
+1. Add **FKBusinessKit**: `https://github.com/feng-zhang0712/FKBusinessKit.git` (from `0.7.0`)
 2. Link **`FKBusinessKit`** to your app target (FKKit is resolved transitively).
 3. **Optional:** also add **FKKit** (`from: "0.71.0"`) if many targets use `FKUIKit` directly without `import FKBusinessKit`.
 
 ### Package.swift (typical app)
 ```swift
 dependencies: [
-  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.6.0"),
+  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.7.0"),
 ],
 targets: [
   .target(
@@ -102,7 +104,7 @@ targets: [
 ```swift
 dependencies: [
   .package(url: "https://github.com/feng-zhang0712/FKKit.git", from: "0.71.0"),
-  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.6.0"),
+  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.7.0"),
 ],
 targets: [
   .target(
@@ -129,7 +131,7 @@ dependencies: [
 platform :ios, '15.0'
 
 pod 'FKCoreKit',     :git => 'https://github.com/feng-zhang0712/FKKit.git', :tag => '0.71.0'
-pod 'FKBusinessKit', :git => 'https://github.com/feng-zhang0712/FKBusinessKit.git', :tag => '0.6.0'
+pod 'FKBusinessKit', :git => 'https://github.com/feng-zhang0712/FKBusinessKit.git', :tag => '0.7.0'
 ```
 
 Local development:
