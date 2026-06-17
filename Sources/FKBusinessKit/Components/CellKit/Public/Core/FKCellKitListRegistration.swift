@@ -153,6 +153,9 @@ public enum FKCellKitListRegistration {
   }
 
   /// Registers all CellKit table content cells on a diffable table controller.
+  ///
+  /// Skeleton placeholders (``FKCellKitUserListSkeletonTableCell``) are opt-in — call
+  /// ``registerUserListSkeletonCell(on:)`` separately when needed.
   @MainActor
   public static func registerAllTableCells(on controller: FKDiffableTableViewController) {
     registerUserListCell(on: controller)
@@ -178,6 +181,9 @@ public enum FKCellKitListRegistration {
   }
 
   /// Registers all CellKit collection content cells on a diffable collection controller.
+  ///
+  /// Skeleton placeholders (``FKCellKitMediaTileSkeletonCollectionCell``) are opt-in — call
+  /// ``registerMediaTileSkeletonCell(on:)`` separately when needed.
   @MainActor
   public static func registerAllCollectionCells(on controller: FKDiffableCollectionViewController) {
     registerProductGridCell(on: controller)

@@ -12,7 +12,7 @@ public struct FKCellKitMediaTileSkeletonContext: Equatable, Sendable {
 public final class FKCellKitMediaTileSkeletonCollectionCell: FKSkeletonCollectionViewCell, FKListCollectionCellConfigurable {
   public typealias Item = FKCellKitMediaTileSkeletonContext
 
-  /// Reuse identifier for collection skeleton registration.
+  /// Manual ``UICollectionView`` reuse identifier. Prefer ListKit registration via ``FKCellKitListRegistration/registerMediaTileSkeletonCell(on:)``.
   public static let reuseIdentifier = "FKBusinessKit.CellKit.MediaTileSkeleton"
 
   /// Registry key for ListKit custom skeleton items.

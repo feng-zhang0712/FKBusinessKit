@@ -12,7 +12,7 @@ public struct FKCellKitUserListSkeletonContext: Equatable, Sendable {
 public final class FKCellKitUserListSkeletonTableCell: FKSkeletonTableViewCell, FKListTableCellConfigurable {
   public typealias Item = FKCellKitUserListSkeletonContext
 
-  /// Reuse identifier for Base table skeleton registration.
+  /// Manual ``UITableView`` reuse identifier. Prefer ListKit registration via ``FKCellKitListRegistration/registerUserListSkeletonCell(on:)``.
   public static let reuseIdentifier = "FKBusinessKit.CellKit.UserListSkeleton"
 
   /// Registry key for ListKit custom skeleton rows.

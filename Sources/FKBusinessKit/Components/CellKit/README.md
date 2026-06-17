@@ -49,24 +49,42 @@ extension ContactsViewController: FKListDelegate {
 }
 ```
 
-## Skeleton placeholders (Base table)
+## Skeleton placeholders (ListKit)
+
+Skeleton cells are **opt-in** — they are not registered by ``FKCellKitListRegistration/registerAllTableCells(on:)`` or ``registerAllCollectionCells(on:)``.
 
 ```swift
-tableView.register(FKCellKitUserListSkeletonTableCell.self, forCellReuseIdentifier: FKCellKitUserListSkeletonTableCell.reuseIdentifier)
-// In cellForRow when loading:
-FKCellKitSkeletonLayout.applyUserListRow(to: cell)
+override func viewDidLoad() {
+  FKCellKitListRegistration.registerUserListSkeletonCell(on: self)
+  let skeletonIDs = (0 ..< 6).map { FKListItemID("skeleton.user.\($0)") }
+  skeletonIDs.forEach { id in
+    FKCellKitListItemFactory.storeUserListSkeletonPayload(id: id, on: self)
+  }
+  super.viewDidLoad()
+  applySnapshot(FKListSnapshot(items: skeletonIDs.map(FKCellKitListItemFactory.userListSkeleton)))
+}
+
+// Collection tiles:
+FKCellKitListRegistration.registerMediaTileSkeletonCell(on: self)
+FKCellKitListItemFactory.storeMediaTileSkeletonPayload(id: tileID, on: self)
+applySnapshot(FKListSnapshot(items: [FKCellKitListItemFactory.mediaTileSkeleton(id: tileID)]))
 ```
 
-## Dynamic feed heights
+## Dynamic row heights
 
-Use ``FKFeedContentCellHeightEstimator`` with ListKit ``FKListHeightCache``:
+Use ``FKFeedContentCellHeightEstimator`` or ``FKCommentThreadCellHeightEstimator`` with ListKit ``FKListHeightCache``:
 
 ```swift
 tableView.rowHeight = UITableView.automaticDimension
 listConfiguration.estimatedRowHeightProvider = { [weak self] item, width in
-  guard let self,
-        let post = self.payload(for: item.id)?.unwrap(FKFeedContentItem.self) else { return 160 }
-  return FKFeedContentCellHeightEstimator.estimatedRowHeight(for: post, width: width, cache: self.heightCache)
+  guard let self else { return 160 }
+  if let post = self.payload(for: item.id)?.unwrap(FKFeedContentItem.self) {
+    return FKFeedContentCellHeightEstimator.estimatedRowHeight(for: post, width: width, cache: self.heightCache)
+  }
+  if let comment = self.payload(for: item.id)?.unwrap(FKCommentThreadItem.self) {
+    return FKCommentThreadCellHeightEstimator.estimatedRowHeight(for: comment, width: width, cache: self.heightCache)
+  }
+  return 160
 }
 ```
 
@@ -132,9 +150,18 @@ struct CommentFeedView: View {
     )
   }
 }
+
+struct ProductGridView: View {
+  var body: some View {
+    FKCellKitDiffableCollectionViewRepresentable(
+      configuration: FKListDefaults.defaultConfiguration,
+      layoutPreset: .grid(columns: 2, spacing: 8)
+    )
+  }
+}
 ```
 
-Subclass ``FKCellKitDiffableTableViewController`` when you need custom ListKit delegate logic in UIKit.
+Subclass ``FKCellKitDiffableTableViewController`` or ``FKCellKitDiffableCollectionViewController`` when you need custom ListKit delegate logic in UIKit.
 
 ## Public cells
 
