@@ -19,7 +19,9 @@ final class FKBaseCollectionListScenarioExampleViewController: FKBusinessKitBase
     layout.sectionInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
     super.init(collectionViewLayout: layout)
     isPullToRefreshEnabled = scenario.usesPullToRefresh
-    skeletonPlaceholderCount = 8
+    var options = listPresentationOptions
+    options.emptyConfiguration = FKEmptyStateConfiguration.scenario(.noFavorites)
+    listPresentationOptions = options
   }
 
   @available(*, unavailable)
@@ -73,6 +75,14 @@ final class FKBaseCollectionListScenarioExampleViewController: FKBusinessKitBase
     startInitialFlow()
   }
 
+  private func retryFromError() {
+    retryCount += 1
+    beginListLoadIfNeeded(isRefresh: true, currentItemCount: labels.count)
+    FKBaseListMockFetch.run(outcome: mockOutcome(for: scenario, retryAttempt: retryCount)) { [weak self] outcome in
+      self?.applyFetchOutcome(outcome, isPullRefresh: false)
+    }
+  }
+
   private func startInitialFlow() {
     switch scenario {
     case .pullRefreshFailure, .pullRefreshBecomesEmpty:
@@ -96,9 +106,7 @@ final class FKBaseCollectionListScenarioExampleViewController: FKBusinessKitBase
       collectionView.reloadData()
       presentErrorState(retryAttempt: retryCount)
     default:
-      if scenario.usesSkeletonPlaceholders {
-        beginSkeletonPlaceholderLoading()
-      }
+      beginListLoadIfNeeded(isRefresh: true, currentItemCount: labels.count)
       FKBaseListMockFetch.run(outcome: mockOutcome(for: scenario, retryAttempt: retryCount)) { [weak self] outcome in
         self?.applyFetchOutcome(outcome, isPullRefresh: false)
       }
@@ -125,42 +133,27 @@ final class FKBaseCollectionListScenarioExampleViewController: FKBusinessKitBase
   }
 
   private func applyFetchOutcome(_ outcome: FKBaseListMockFetchOutcome, isPullRefresh: Bool) {
-    if scenario.usesSkeletonPlaceholders, !isPullRefresh {
-      endSkeletonPlaceholderLoading(reloadData: false)
-    }
+    let preservedCount = labels.count
+    let presentationOutcome = outcome.listPresentationOutcome(
+      preservedItemCount: preservedCount,
+      isPullRefresh: isPullRefresh
+    )
+    labels = outcome.rowsAfterApplying
 
-    switch outcome {
-    case let .success(items):
-      labels = items
-      collectionView.reloadData()
-      hideListEmptyState()
-      if isPullRefresh {
-        endPullToRefresh(success: true)
-      } else {
-        showToast("Loaded \(items.count) tiles")
-      }
-    case .empty:
-      labels = []
-      collectionView.reloadData()
-      let empty = FKEmptyStateConfiguration.scenario(.noFavorites)
-      syncListEmptyState(itemCount: 0, emptyConfiguration: empty)
-      if isPullRefresh { endPullToRefresh(success: true) }
-    case .noNetwork:
-      labels = []
-      collectionView.reloadData()
-      syncListEmptyState(itemCount: 0, emptyConfiguration: .scenario(.noNetwork)) { [weak self] _ in
-        self?.replayTapped()
-      }
-      if isPullRefresh { endPullToRefresh(success: false) }
-    case .serverError:
-      if isPullRefresh {
-        endPullToRefresh(success: false)
+    finishListLoadPresentation(
+      outcome: presentationOutcome,
+      isRefresh: isPullRefresh,
+      retryHandler: { [weak self] _ in self?.retryFromError() }
+    )
+    reloadListContent()
+
+    if isPullRefresh {
+      endPullToRefresh(success: outcome.isRefreshSuccess)
+      if !outcome.isRefreshSuccess {
         showToast("Refresh failed")
-        return
       }
-      labels = []
-      collectionView.reloadData()
-      presentErrorState(retryAttempt: retryCount)
+    } else if case let .success(items) = outcome {
+      showToast("Loaded \(items.count) tiles")
     }
   }
 
@@ -170,14 +163,7 @@ final class FKBaseCollectionListScenarioExampleViewController: FKBusinessKitBase
       error = error.withDescription("First attempt failed. Tap Retry to simulate a second request.")
     }
     applyListEmptyState(error) { [weak self] _ in
-      guard let self else { return }
-      self.retryCount += 1
-      if self.scenario.usesSkeletonPlaceholders {
-        self.beginSkeletonPlaceholderLoading()
-      }
-      FKBaseListMockFetch.run(outcome: self.mockOutcome(for: self.scenario, retryAttempt: self.retryCount)) { outcome in
-        self.applyFetchOutcome(outcome, isPullRefresh: false)
-      }
+      self?.retryFromError()
     }
   }
 
@@ -194,18 +180,12 @@ final class FKBaseCollectionListScenarioExampleViewController: FKBusinessKitBase
 extension FKBaseCollectionListScenarioExampleViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
 
   func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-    if isShowingSkeletonPlaceholders { return skeletonPlaceholderCount }
-    return labels.count
+    listDataSourceItemCount(actualCount: labels.count)
   }
 
   func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
     if isShowingSkeletonPlaceholders {
-      let cell = collectionView.dequeueReusableCell(
-        withReuseIdentifier: FKBusinessKitBase.ListSkeletonReuseIdentifier.collectionCell,
-        for: indexPath
-      ) as! FKSkeletonCollectionViewCell
-      configureDefaultSkeletonCollectionCell(cell, at: indexPath.item)
-      return cell
+      return dequeueDefaultSkeletonCollectionCell(in: collectionView, at: indexPath)
     }
     let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Self.dataReuseId, for: indexPath)
     cell.contentView.backgroundColor = tileColor(at: indexPath.item)

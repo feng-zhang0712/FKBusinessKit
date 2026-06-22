@@ -4,6 +4,20 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+### Added
+
+- **Base** — list presentation orchestration aligned with SACTrain list spec:
+  - `FKBaseListPresentationOutcome`, `FKBaseListFailureKind`, `FKBaseListPresentationOptions`, `FKBaseListPresentationDefaults`
+  - `beginListLoadIfNeeded(isRefresh:currentItemCount:)` / `finishListLoadPresentation(outcome:isRefresh:retryHandler:)`
+  - `listEmptyStateHostView` / `listEmptyStateClearingScrollView` (default host `view`)
+  - `listDataSourceRowCount(actualCount:)` / `dequeueDefaultSkeletonTableCell` (+ collection symmetric APIs)
+  - `FKBaseListPresentationCoordinator`, internal `FKBaseListEmptyStateHost`
+- Design doc: [list-presentation-spec.md](docs/list-presentation-spec.md)
+
+### Changed
+
+- **Base** — **behavior**: `applyListEmptyState` / `syncListEmptyState` mount on `listEmptyStateHostView` (default `view`) instead of `tableView`, preventing empty-state overlay from moving during pull-to-refresh. Override `listEmptyStateHostView { tableView }` to restore scroll-embedded hosting.
+
 ## [0.7.0] - 2026-06-17
 
 ### Added

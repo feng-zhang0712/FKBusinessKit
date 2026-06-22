@@ -13,7 +13,11 @@ final class FKBaseTableListScenarioExampleViewController: FKBusinessKitBase.Tabl
     self.scenario = scenario
     super.init(style: .insetGrouped)
     isPullToRefreshEnabled = scenario.usesPullToRefresh
-    skeletonPlaceholderCount = 8
+    var options = listPresentationOptions
+    options.emptyConfiguration = FKEmptyStateConfiguration.scenario(.noSearchResult)
+      .withTitle("No items")
+      .withDescription("Try adjusting filters or check back later.")
+    listPresentationOptions = options
   }
 
   @available(*, unavailable)
@@ -67,6 +71,14 @@ final class FKBaseTableListScenarioExampleViewController: FKBusinessKitBase.Tabl
     startInitialFlow()
   }
 
+  private func retryFromError() {
+    retryCount += 1
+    beginListLoadIfNeeded(isRefresh: true, currentItemCount: rows.count)
+    FKBaseListMockFetch.run(outcome: mockOutcome(for: scenario, retryAttempt: retryCount)) { [weak self] outcome in
+      self?.applyFetchOutcome(outcome, isPullRefresh: false)
+    }
+  }
+
   private func startInitialFlow() {
     switch scenario {
     case .pullRefreshFailure, .pullRefreshBecomesEmpty:
@@ -77,6 +89,7 @@ final class FKBaseTableListScenarioExampleViewController: FKBusinessKitBase.Tabl
         self?.applyFetchOutcome(outcome, isPullRefresh: false)
       }
     case .emptyStateLoadingTransition:
+      // Alternative to skeleton rows: full-page FKEmptyState loading phase (not recommended for paginated lists).
       var loading = FKEmptyStateConfiguration(phase: .loading, type: .loading, title: "Loading items…")
       loading.content.loadingMessage = "Fetching the latest rows"
       applyListEmptyState(loading)
@@ -92,9 +105,7 @@ final class FKBaseTableListScenarioExampleViewController: FKBusinessKitBase.Tabl
       tableView.reloadData()
       presentErrorState(retryAttempt: retryCount)
     default:
-      if scenario.usesSkeletonPlaceholders {
-        beginSkeletonPlaceholderLoading()
-      }
+      beginListLoadIfNeeded(isRefresh: true, currentItemCount: rows.count)
       FKBaseListMockFetch.run(outcome: mockOutcome(for: scenario, retryAttempt: retryCount)) { [weak self] outcome in
         self?.applyFetchOutcome(outcome, isPullRefresh: false)
       }
@@ -121,45 +132,27 @@ final class FKBaseTableListScenarioExampleViewController: FKBusinessKitBase.Tabl
   }
 
   private func applyFetchOutcome(_ outcome: FKBaseListMockFetchOutcome, isPullRefresh: Bool) {
-    if scenario.usesSkeletonPlaceholders, !isPullRefresh {
-      endSkeletonPlaceholderLoading(reloadData: false)
-    }
+    let preservedCount = rows.count
+    let presentationOutcome = outcome.listPresentationOutcome(
+      preservedItemCount: preservedCount,
+      isPullRefresh: isPullRefresh
+    )
+    rows = outcome.rowsAfterApplying
 
-    switch outcome {
-    case let .success(items):
-      rows = items
-      tableView.reloadData()
-      hideListEmptyState()
-      if isPullRefresh {
-        endPullToRefresh(success: true)
-      } else {
-        showToast("Loaded \(items.count) rows")
-      }
-    case .empty:
-      rows = []
-      tableView.reloadData()
-      let empty = FKEmptyStateConfiguration.scenario(.noSearchResult)
-        .withTitle("No items")
-        .withDescription("Try adjusting filters or check back later.")
-      syncListEmptyState(itemCount: 0, emptyConfiguration: empty)
-      if isPullRefresh { endPullToRefresh(success: true) }
-    case .noNetwork:
-      rows = []
-      tableView.reloadData()
-      let offline = FKEmptyStateConfiguration.scenario(.noNetwork)
-      syncListEmptyState(itemCount: 0, emptyConfiguration: offline) { [weak self] _ in
-        self?.replayTapped()
-      }
-      if isPullRefresh { endPullToRefresh(success: false) }
-    case .serverError:
-      if isPullRefresh {
-        endPullToRefresh(success: false)
+    finishListLoadPresentation(
+      outcome: presentationOutcome,
+      isRefresh: isPullRefresh,
+      retryHandler: { [weak self] _ in self?.retryFromError() }
+    )
+    reloadListContent()
+
+    if isPullRefresh {
+      endPullToRefresh(success: outcome.isRefreshSuccess)
+      if !outcome.isRefreshSuccess {
         showToast("Refresh failed")
-        return
       }
-      rows = []
-      tableView.reloadData()
-      presentErrorState(retryAttempt: retryCount)
+    } else if case let .success(items) = outcome {
+      showToast("Loaded \(items.count) rows")
     }
   }
 
@@ -169,30 +162,17 @@ final class FKBaseTableListScenarioExampleViewController: FKBusinessKitBase.Tabl
       error = error.withDescription("First attempt failed. Tap Retry to simulate a second request.")
     }
     applyListEmptyState(error) { [weak self] _ in
-      guard let self else { return }
-      self.retryCount += 1
-      if self.scenario.usesSkeletonPlaceholders {
-        self.beginSkeletonPlaceholderLoading()
-      }
-      FKBaseListMockFetch.run(outcome: self.mockOutcome(for: self.scenario, retryAttempt: self.retryCount)) { outcome in
-        self.applyFetchOutcome(outcome, isPullRefresh: false)
-      }
+      self?.retryFromError()
     }
   }
 
   func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-    if isShowingSkeletonPlaceholders { return skeletonPlaceholderCount }
-    return rows.count
+    listDataSourceRowCount(actualCount: rows.count)
   }
 
   func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
     if isShowingSkeletonPlaceholders {
-      let cell = tableView.dequeueReusableCell(
-        withIdentifier: FKBusinessKitBase.ListSkeletonReuseIdentifier.tableCell,
-        for: indexPath
-      ) as! FKSkeletonTableViewCell
-      configureDefaultSkeletonTableCell(cell, at: indexPath.row)
-      return cell
+      return dequeueDefaultSkeletonTableCell(in: tableView, at: indexPath)
     }
     let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
     var config = cell.defaultContentConfiguration()

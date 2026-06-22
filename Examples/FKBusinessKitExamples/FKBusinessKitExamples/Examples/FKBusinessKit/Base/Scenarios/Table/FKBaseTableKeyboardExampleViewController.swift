@@ -117,7 +117,6 @@ final class FKBaseTableKeyboardExampleViewController: FKBusinessKitBase.TableVie
         emailField.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 16),
         emailField.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -16),
         emailField.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -8),
-        emailField.heightAnchor.constraint(equalToConstant: 44),
       ])
     }
     return cell
@@ -135,7 +134,6 @@ final class FKBaseTableKeyboardExampleViewController: FKBusinessKitBase.TableVie
         noteField.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 16),
         noteField.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -16),
         noteField.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -8),
-        noteField.heightAnchor.constraint(equalToConstant: 100),
       ])
     }
     return cell

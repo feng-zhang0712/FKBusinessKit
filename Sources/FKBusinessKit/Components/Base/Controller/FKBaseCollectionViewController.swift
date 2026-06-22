@@ -27,6 +27,12 @@ open class FKBaseCollectionViewController: FKBaseViewController {
 
   public var loadMoreState: FKBaseLoadMoreState { refreshCoordinator.loadMoreState }
 
+  /// Empty-state overlay host. Defaults to ``FKBaseViewController/view`` so the overlay does not move during pull-to-refresh.
+  open var listEmptyStateHostView: UIView { view }
+
+  /// Scroll view cleared before applying host empty state (removes legacy scroll overlays).
+  open var listEmptyStateClearingScrollView: UIScrollView? { collectionView }
+
   open override var keyboardFocusScrollView: UIScrollView? { collectionView }
 
   /// Flow layout cast when the controller was created with ``UICollectionViewFlowLayout`` (including the default).

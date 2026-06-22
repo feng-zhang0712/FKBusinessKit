@@ -51,6 +51,14 @@ open class FKBaseTableViewController: FKBaseViewController {
   /// High-level pagination hint for load-more UX (call ``markLoadMoreFinished()`` / ``markLoadMoreNoMoreData()`` from your fetch logic).
   public var loadMoreState: FKBaseLoadMoreState { refreshCoordinator.loadMoreState }
 
+  /// Empty-state overlay host. Defaults to ``FKBaseViewController/view`` so the overlay does not move during pull-to-refresh.
+  ///
+  /// Override to ``tableView`` when scroll-embedded empty state is intentional.
+  open var listEmptyStateHostView: UIView { view }
+
+  /// Scroll view cleared before applying host empty state (removes legacy scroll overlays).
+  open var listEmptyStateClearingScrollView: UIScrollView? { tableView }
+
   private let refreshCoordinator = FKBaseRefreshCoordinator()
 
   // MARK: - Init

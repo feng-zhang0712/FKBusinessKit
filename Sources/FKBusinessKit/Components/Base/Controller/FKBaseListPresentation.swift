@@ -60,155 +60,7 @@ public enum FKBaseListSkeletonLayout {
   }
 }
 
-// MARK: - Table
-
-public extension FKBaseTableViewController {
-
-  /// When `true`, ``UITableViewDataSource`` should serve ``FKSkeletonTableViewCell`` placeholder rows.
-  var isShowingSkeletonPlaceholders: Bool {
-    get { listPresentationState.isShowingSkeletonPlaceholders }
-    set { listPresentationState.isShowingSkeletonPlaceholders = newValue }
-  }
-
-  /// Placeholder row count while ``isShowingSkeletonPlaceholders`` is `true`.
-  var skeletonPlaceholderCount: Int {
-    get { listPresentationState.skeletonPlaceholderCount }
-    set { listPresentationState.skeletonPlaceholderCount = max(1, newValue) }
-  }
-
-  /// Registers ``FKSkeletonTableViewCell`` with ``FKBaseListSkeletonReuseIdentifier/tableCell``.
-  func registerDefaultSkeletonTableCell() {
-    tableView.register(FKSkeletonTableViewCell.self, forCellReuseIdentifier: FKBaseListSkeletonReuseIdentifier.tableCell)
-  }
-
-  /// Shows skeleton placeholder rows and hides ``FKEmptyState`` overlays.
-  func beginSkeletonPlaceholderLoading(count: Int? = nil, reloadData: Bool = true) {
-    if let count { skeletonPlaceholderCount = count }
-    hideListEmptyState(animated: false)
-    hideLoading()
-    isShowingSkeletonPlaceholders = true
-    if reloadData { tableView.reloadData() }
-  }
-
-  /// Clears skeleton placeholder mode (call before applying real data or empty/error overlays).
-  func endSkeletonPlaceholderLoading(reloadData: Bool = true) {
-    isShowingSkeletonPlaceholders = false
-    if reloadData { tableView.reloadData() }
-  }
-
-  /// Applies ``FKEmptyState`` on ``tableView`` (loading / empty / error).
-  func applyListEmptyState(
-    _ configuration: FKEmptyStateConfiguration,
-    animated: Bool = true,
-    actionHandler: ((FKEmptyStateAction) -> Void)? = nil
-  ) {
-    hideLoading()
-    hideEmptyView()
-    tableView.fk_applyEmptyState(configuration, animated: animated, actionHandler: actionHandler)
-  }
-
-  /// Hides scroll-view ``FKEmptyState`` overlay (`phase = .content`).
-  func hideListEmptyState(animated: Bool = true) {
-    var hidden = tableView.fk_emptyStateConfiguration ?? FKEmptyStateConfiguration(phase: .content)
-    hidden.phase = .content
-    tableView.fk_applyEmptyState(hidden, animated: animated)
-  }
-
-  /// Updates empty/error overlay from current row count (no-op while skeleton placeholders are visible).
-  func syncListEmptyState(
-    itemCount: Int,
-    emptyConfiguration: FKEmptyStateConfiguration,
-    animated: Bool = true,
-    actionHandler: ((FKEmptyStateAction) -> Void)? = nil
-  ) {
-    guard !isShowingSkeletonPlaceholders else { return }
-    tableView.fk_updateEmptyState(
-      itemCount: itemCount,
-      configuration: emptyConfiguration,
-      animated: animated,
-      actionHandler: actionHandler
-    )
-  }
-
-  /// Default skeleton cell configuration (override for custom placeholder chrome).
-  func configureDefaultSkeletonTableCell(_ cell: FKSkeletonTableViewCell, at index: Int) {
-    _ = index
-    FKBaseListSkeletonLayout.applyListRow(to: cell)
-  }
-}
-
-// MARK: - Collection
-
-public extension FKBaseCollectionViewController {
-
-  var isShowingSkeletonPlaceholders: Bool {
-    get { listPresentationState.isShowingSkeletonPlaceholders }
-    set { listPresentationState.isShowingSkeletonPlaceholders = newValue }
-  }
-
-  var skeletonPlaceholderCount: Int {
-    get { listPresentationState.skeletonPlaceholderCount }
-    set { listPresentationState.skeletonPlaceholderCount = max(1, newValue) }
-  }
-
-  func registerDefaultSkeletonCollectionCell() {
-    collectionView.register(
-      FKSkeletonCollectionViewCell.self,
-      forCellWithReuseIdentifier: FKBaseListSkeletonReuseIdentifier.collectionCell
-    )
-  }
-
-  func beginSkeletonPlaceholderLoading(count: Int? = nil, reloadData: Bool = true) {
-    if let count { skeletonPlaceholderCount = count }
-    hideListEmptyState(animated: false)
-    hideLoading()
-    isShowingSkeletonPlaceholders = true
-    if reloadData { collectionView.reloadData() }
-  }
-
-  func endSkeletonPlaceholderLoading(reloadData: Bool = true) {
-    isShowingSkeletonPlaceholders = false
-    if reloadData { collectionView.reloadData() }
-  }
-
-  func applyListEmptyState(
-    _ configuration: FKEmptyStateConfiguration,
-    animated: Bool = true,
-    actionHandler: ((FKEmptyStateAction) -> Void)? = nil
-  ) {
-    hideLoading()
-    hideEmptyView()
-    collectionView.fk_applyEmptyState(configuration, animated: animated, actionHandler: actionHandler)
-  }
-
-  func hideListEmptyState(animated: Bool = true) {
-    var hidden = collectionView.fk_emptyStateConfiguration ?? FKEmptyStateConfiguration(phase: .content)
-    hidden.phase = .content
-    collectionView.fk_applyEmptyState(hidden, animated: animated)
-  }
-
-  func syncListEmptyState(
-    itemCount: Int,
-    emptyConfiguration: FKEmptyStateConfiguration,
-    animated: Bool = true,
-    actionHandler: ((FKEmptyStateAction) -> Void)? = nil
-  ) {
-    guard !isShowingSkeletonPlaceholders else { return }
-    collectionView.fk_updateEmptyState(
-      itemCount: itemCount,
-      configuration: emptyConfiguration,
-      animated: animated,
-      actionHandler: actionHandler
-    )
-  }
-
-  func configureDefaultSkeletonCollectionCell(_ cell: FKSkeletonCollectionViewCell, at index: Int) {
-    _ = index
-    FKBaseListSkeletonLayout.applyGridTile(to: cell)
-  }
-}
-
-// MARK: - Shared storage
+// MARK: - Shared list presentation storage
 
 extension FKBaseViewController {
   fileprivate var listPresentationState: FKBaseListPresentationState {
@@ -224,10 +76,373 @@ extension FKBaseViewController {
       objc_setAssociatedObject(self, &FKBaseListPresentationState.associationKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
   }
+
+  /// List presentation policy; assign before the first load when customizing defaults.
+  public var listPresentationOptions: FKBaseListPresentationOptions {
+    get { listPresentationState.presentationOptions }
+    set { listPresentationState.presentationOptions = newValue }
+  }
 }
 
 private final class FKBaseListPresentationState {
   nonisolated(unsafe) static var associationKey: UInt8 = 0
   var isShowingSkeletonPlaceholders = false
-  var skeletonPlaceholderCount = 8
+  var presentationOptions = FKBaseListPresentationOptions()
+}
+
+// MARK: - Table
+
+public extension FKBaseTableViewController {
+
+  var isShowingSkeletonPlaceholders: Bool {
+    get { listPresentationState.isShowingSkeletonPlaceholders }
+    set { listPresentationState.isShowingSkeletonPlaceholders = newValue }
+  }
+
+  /// Placeholder row count while ``isShowingSkeletonPlaceholders`` is `true` (synced with ``listPresentationOptions``).
+  var skeletonPlaceholderCount: Int {
+    get { listPresentationOptions.skeletonPlaceholderCount }
+    set { listPresentationOptions.skeletonPlaceholderCount = max(1, newValue) }
+  }
+
+  var currentListPresentationPhase: FKBaseListPresentationPhase {
+    fk_derivedListPresentationPhase(
+      clearingScrollView: listEmptyStateClearingScrollView,
+      hostView: listEmptyStateHostView,
+      isShowingSkeletonPlaceholders: isShowingSkeletonPlaceholders,
+      loadMoreState: loadMoreState,
+      pullToRefreshControl: pullToRefreshControl
+    )
+  }
+
+  func registerDefaultSkeletonTableCell() {
+    tableView.register(FKSkeletonTableViewCell.self, forCellReuseIdentifier: FKBaseListSkeletonReuseIdentifier.tableCell)
+  }
+
+  func reloadListContent() {
+    tableView.reloadData()
+  }
+
+  func beginListLoadIfNeeded(isRefresh: Bool, currentItemCount: Int) {
+    FKBaseListPresentationCoordinator.beginListLoadIfNeeded(
+      isRefresh: isRefresh,
+      currentItemCount: currentItemCount,
+      options: listPresentationOptions,
+      isShowingSkeletonPlaceholders: isShowingSkeletonPlaceholders,
+      beginSkeleton: { [weak self] in
+        self?.beginSkeletonPlaceholderLoading(
+          count: self?.listPresentationOptions.skeletonPlaceholderCount,
+          reloadData: true
+        )
+      }
+    )
+  }
+
+  func finishListLoadPresentation(
+    outcome: FKBaseListPresentationOutcome,
+    isRefresh: Bool,
+    retryHandler: ((FKEmptyStateAction) -> Void)? = nil
+  ) {
+    _ = isRefresh
+    let wasShowingSkeleton = isShowingSkeletonPlaceholders
+    endSkeletonPlaceholderLoading(reloadData: false)
+    let animated = listPresentationOptions.animatesEmptyState
+    FKBaseListPresentationCoordinator.finishListLoadPresentation(
+      outcome: outcome,
+      options: listPresentationOptions,
+      applyEmptyState: { [weak self] configuration, handler in
+        self?.applyListEmptyState(configuration, animated: animated, actionHandler: handler)
+      },
+      syncEmptyState: { [weak self] configuration, handler in
+        self?.syncListEmptyState(itemCount: 0, emptyConfiguration: configuration, animated: animated, actionHandler: handler)
+      },
+      hideEmptyState: { [weak self] in
+        self?.hideListEmptyState(animated: animated)
+      },
+      retryHandler: retryHandler
+    )
+    if wasShowingSkeleton {
+      reloadListContent()
+    }
+  }
+
+  func handleListEmptyStatePrimaryAction() {
+    guard isPullToRefreshEnabled else { return }
+    if let control = pullToRefreshControl {
+      control.beginRefreshing()
+    } else {
+      performPullToRefresh()
+    }
+  }
+
+  func beginSkeletonPlaceholderLoading(count: Int? = nil, reloadData: Bool = true) {
+    if let count { skeletonPlaceholderCount = count }
+    FKBaseListEmptyStateHost.hide(
+      on: listEmptyStateHostView,
+      clearingScrollView: listEmptyStateClearingScrollView,
+      animated: false
+    )
+    hideLoading()
+    isShowingSkeletonPlaceholders = true
+    if reloadData { tableView.reloadData() }
+  }
+
+  func endSkeletonPlaceholderLoading(reloadData: Bool = true) {
+    isShowingSkeletonPlaceholders = false
+    if reloadData { tableView.reloadData() }
+  }
+
+  func applyListEmptyState(
+    _ configuration: FKEmptyStateConfiguration,
+    animated: Bool = true,
+    actionHandler: ((FKEmptyStateAction) -> Void)? = nil
+  ) {
+    hideLoading()
+    hideEmptyView()
+    FKBaseListEmptyStateHost.apply(
+      configuration,
+      on: listEmptyStateHostView,
+      clearingScrollView: listEmptyStateClearingScrollView,
+      animated: listPresentationOptions.animatesEmptyState ? animated : false,
+      actionHandler: actionHandler
+    )
+  }
+
+  func hideListEmptyState(animated: Bool = true) {
+    FKBaseListEmptyStateHost.hide(
+      on: listEmptyStateHostView,
+      clearingScrollView: listEmptyStateClearingScrollView,
+      animated: listPresentationOptions.animatesEmptyState ? animated : false
+    )
+  }
+
+  func syncListEmptyState(
+    itemCount: Int,
+    emptyConfiguration: FKEmptyStateConfiguration,
+    animated: Bool = true,
+    actionHandler: ((FKEmptyStateAction) -> Void)? = nil
+  ) {
+    guard !isShowingSkeletonPlaceholders else { return }
+    FKBaseListEmptyStateHost.sync(
+      itemCount: itemCount,
+      configuration: emptyConfiguration,
+      on: listEmptyStateHostView,
+      clearingScrollView: listEmptyStateClearingScrollView,
+      animated: listPresentationOptions.animatesEmptyState ? animated : false,
+      actionHandler: actionHandler
+    )
+  }
+
+  func configureDefaultSkeletonTableCell(_ cell: FKSkeletonTableViewCell, at index: Int) {
+    _ = index
+    FKBaseListSkeletonLayout.applyListRow(to: cell)
+  }
+
+  func listDataSourceRowCount(actualCount: Int) -> Int {
+    isShowingSkeletonPlaceholders ? skeletonPlaceholderCount : actualCount
+  }
+
+  func dequeueDefaultSkeletonTableCell(in tableView: UITableView, at indexPath: IndexPath) -> UITableViewCell {
+    let cell = tableView.dequeueReusableCell(
+      withIdentifier: FKBaseListSkeletonReuseIdentifier.tableCell,
+      for: indexPath
+    ) as! FKSkeletonTableViewCell
+    configureDefaultSkeletonTableCell(cell, at: indexPath.row)
+    return cell
+  }
+}
+
+// MARK: - Collection
+
+public extension FKBaseCollectionViewController {
+
+  var isShowingSkeletonPlaceholders: Bool {
+    get { listPresentationState.isShowingSkeletonPlaceholders }
+    set { listPresentationState.isShowingSkeletonPlaceholders = newValue }
+  }
+
+  var skeletonPlaceholderCount: Int {
+    get { listPresentationOptions.skeletonPlaceholderCount }
+    set { listPresentationOptions.skeletonPlaceholderCount = max(1, newValue) }
+  }
+
+  var currentListPresentationPhase: FKBaseListPresentationPhase {
+    fk_derivedListPresentationPhase(
+      clearingScrollView: listEmptyStateClearingScrollView,
+      hostView: listEmptyStateHostView,
+      isShowingSkeletonPlaceholders: isShowingSkeletonPlaceholders,
+      loadMoreState: loadMoreState,
+      pullToRefreshControl: pullToRefreshControl
+    )
+  }
+
+  func registerDefaultSkeletonCollectionCell() {
+    collectionView.register(
+      FKSkeletonCollectionViewCell.self,
+      forCellWithReuseIdentifier: FKBaseListSkeletonReuseIdentifier.collectionCell
+    )
+  }
+
+  func reloadListContent() {
+    collectionView.reloadData()
+  }
+
+  func beginListLoadIfNeeded(isRefresh: Bool, currentItemCount: Int) {
+    FKBaseListPresentationCoordinator.beginListLoadIfNeeded(
+      isRefresh: isRefresh,
+      currentItemCount: currentItemCount,
+      options: listPresentationOptions,
+      isShowingSkeletonPlaceholders: isShowingSkeletonPlaceholders,
+      beginSkeleton: { [weak self] in
+        self?.beginSkeletonPlaceholderLoading(
+          count: self?.listPresentationOptions.skeletonPlaceholderCount,
+          reloadData: true
+        )
+      }
+    )
+  }
+
+  func finishListLoadPresentation(
+    outcome: FKBaseListPresentationOutcome,
+    isRefresh: Bool,
+    retryHandler: ((FKEmptyStateAction) -> Void)? = nil
+  ) {
+    _ = isRefresh
+    let wasShowingSkeleton = isShowingSkeletonPlaceholders
+    endSkeletonPlaceholderLoading(reloadData: false)
+    let animated = listPresentationOptions.animatesEmptyState
+    FKBaseListPresentationCoordinator.finishListLoadPresentation(
+      outcome: outcome,
+      options: listPresentationOptions,
+      applyEmptyState: { [weak self] configuration, handler in
+        self?.applyListEmptyState(configuration, animated: animated, actionHandler: handler)
+      },
+      syncEmptyState: { [weak self] configuration, handler in
+        self?.syncListEmptyState(itemCount: 0, emptyConfiguration: configuration, animated: animated, actionHandler: handler)
+      },
+      hideEmptyState: { [weak self] in
+        self?.hideListEmptyState(animated: animated)
+      },
+      retryHandler: retryHandler
+    )
+    if wasShowingSkeleton {
+      reloadListContent()
+    }
+  }
+
+  func handleListEmptyStatePrimaryAction() {
+    guard isPullToRefreshEnabled else { return }
+    if let control = pullToRefreshControl {
+      control.beginRefreshing()
+    } else {
+      performPullToRefresh()
+    }
+  }
+
+  func beginSkeletonPlaceholderLoading(count: Int? = nil, reloadData: Bool = true) {
+    if let count { skeletonPlaceholderCount = count }
+    FKBaseListEmptyStateHost.hide(
+      on: listEmptyStateHostView,
+      clearingScrollView: listEmptyStateClearingScrollView,
+      animated: false
+    )
+    hideLoading()
+    isShowingSkeletonPlaceholders = true
+    if reloadData { collectionView.reloadData() }
+  }
+
+  func endSkeletonPlaceholderLoading(reloadData: Bool = true) {
+    isShowingSkeletonPlaceholders = false
+    if reloadData { collectionView.reloadData() }
+  }
+
+  func applyListEmptyState(
+    _ configuration: FKEmptyStateConfiguration,
+    animated: Bool = true,
+    actionHandler: ((FKEmptyStateAction) -> Void)? = nil
+  ) {
+    hideLoading()
+    hideEmptyView()
+    FKBaseListEmptyStateHost.apply(
+      configuration,
+      on: listEmptyStateHostView,
+      clearingScrollView: listEmptyStateClearingScrollView,
+      animated: listPresentationOptions.animatesEmptyState ? animated : false,
+      actionHandler: actionHandler
+    )
+  }
+
+  func hideListEmptyState(animated: Bool = true) {
+    FKBaseListEmptyStateHost.hide(
+      on: listEmptyStateHostView,
+      clearingScrollView: listEmptyStateClearingScrollView,
+      animated: listPresentationOptions.animatesEmptyState ? animated : false
+    )
+  }
+
+  func syncListEmptyState(
+    itemCount: Int,
+    emptyConfiguration: FKEmptyStateConfiguration,
+    animated: Bool = true,
+    actionHandler: ((FKEmptyStateAction) -> Void)? = nil
+  ) {
+    guard !isShowingSkeletonPlaceholders else { return }
+    FKBaseListEmptyStateHost.sync(
+      itemCount: itemCount,
+      configuration: emptyConfiguration,
+      on: listEmptyStateHostView,
+      clearingScrollView: listEmptyStateClearingScrollView,
+      animated: listPresentationOptions.animatesEmptyState ? animated : false,
+      actionHandler: actionHandler
+    )
+  }
+
+  func configureDefaultSkeletonCollectionCell(_ cell: FKSkeletonCollectionViewCell, at index: Int) {
+    _ = index
+    FKBaseListSkeletonLayout.applyGridTile(to: cell)
+  }
+
+  func listDataSourceItemCount(actualCount: Int) -> Int {
+    isShowingSkeletonPlaceholders ? skeletonPlaceholderCount : actualCount
+  }
+
+  func dequeueDefaultSkeletonCollectionCell(in collectionView: UICollectionView, at indexPath: IndexPath) -> UICollectionViewCell {
+    let cell = collectionView.dequeueReusableCell(
+      withReuseIdentifier: FKBaseListSkeletonReuseIdentifier.collectionCell,
+      for: indexPath
+    ) as! FKSkeletonCollectionViewCell
+    configureDefaultSkeletonCollectionCell(cell, at: indexPath.item)
+    return cell
+  }
+}
+
+// MARK: - Phase derivation
+
+extension FKBaseViewController {
+
+  fileprivate func fk_derivedListPresentationPhase(
+    clearingScrollView: UIScrollView?,
+    hostView: UIView,
+    isShowingSkeletonPlaceholders: Bool,
+    loadMoreState: FKBaseLoadMoreState,
+    pullToRefreshControl: FKRefreshControl?
+  ) -> FKBaseListPresentationPhase {
+    if isShowingSkeletonPlaceholders { return .initialLoading }
+    if pullToRefreshControl?.state == .refreshing { return .refreshing }
+    if loadMoreState == .loading { return .loadingNextPage }
+    if hostView.fk_isEmptyStateOverlayVisible {
+      switch hostView.fk_emptyStateConfiguration?.phase {
+      case .error:
+        return .error
+      case .empty, .loading:
+        return .empty
+      default:
+        break
+      }
+    }
+    if clearingScrollView?.fk_isEmptyStateOverlayVisible == true {
+      return .empty
+    }
+    return .content
+  }
 }

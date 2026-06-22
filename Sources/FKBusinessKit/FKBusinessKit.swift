@@ -19,6 +19,12 @@ public enum FKBusinessKitBase {
   public typealias SearchIntegration = FKBaseSearchIntegration
   public typealias ListSkeletonReuseIdentifier = FKBaseListSkeletonReuseIdentifier
   public typealias ListSkeletonLayout = FKBaseListSkeletonLayout
+  public typealias ListPresentationPhase = FKBaseListPresentationPhase
+  public typealias ListPresentationOutcome = FKBaseListPresentationOutcome
+  public typealias ListFailureKind = FKBaseListFailureKind
+  public typealias ListPresentationOptions = FKBaseListPresentationOptions
+  public typealias ListPresentationDefaults = FKBaseListPresentationDefaults
+  public typealias ListPresentationCoordinator = FKBaseListPresentationCoordinator
   public typealias LoadMoreState = FKBaseLoadMoreState
   public typealias ViewControllerComposite = FKViewControllerComposite
   public typealias ViewControllerBuildPhases = FKViewControllerBuildPhases

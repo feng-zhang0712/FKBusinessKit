@@ -19,6 +19,8 @@ Components/Base/
 │   ├── FKBaseCollectionViewController.swift
 │   ├── FKBaseScrollViewController.swift   # Scroll view + contentView + optional pull-to-refresh
 │   ├── FKBaseListPresentation.swift       # FKSkeleton / FKEmptyState list helpers
+│   ├── FKBaseListPresentationTypes.swift    # Outcome, options, defaults
+│   ├── FKBaseListPresentationCoordinator.swift # begin/finish orchestration
 │   └── FKBaseSearchIntegration.swift      # UISearchController attachment helpers
 ├── Composition/
 │   ├── FKViewControllerCompositionProtocols.swift   # Build phases, hosting, forwarding
@@ -34,7 +36,8 @@ Components/Base/
     ├── FKBaseViewControllerHierarchy.swift
     ├── FKBaseViewController+StateOverlays.swift
     ├── FKBaseScrollKeyboardFocus.swift
-    └── FKBaseRefreshCoordinator.swift
+    ├── FKBaseRefreshCoordinator.swift
+    └── FKBaseListEmptyStateHost.swift
 ```
 
 ---
@@ -223,14 +226,21 @@ Single primary `UITableView` or `UICollectionView`, pinned below ``FKBaseTableVi
 
 `FKBaseTableLoadMoreState` is a deprecated alias for **`FKBaseLoadMoreState`**.
 
-#### List presentation (`FKBaseListPresentation.swift`)
+#### List presentation (`FKBaseListPresentation*.swift`)
 
-Integrates **FKSkeleton** placeholder rows and **FKEmptyState** scroll overlays:
+Integrates **FKSkeleton** placeholder rows and **FKEmptyState** host overlays per [list-presentation-spec.md](../../../../docs/list-presentation-spec.md):
 
-- `beginSkeletonPlaceholderLoading(count:reloadData:)` / `endSkeletonPlaceholderLoading(reloadData:)`
-- `applyListEmptyState(_:animated:actionHandler:)` / `hideListEmptyState(animated:)` / `syncListEmptyState(itemCount:emptyConfiguration:...)`
-- `FKBaseListSkeletonLayout` — default avatar-row and grid-tile placeholders
-- `FKBaseListSkeletonReuseIdentifier` — shared skeleton cell IDs
+| API | Role |
+|-----|------|
+| `beginListLoadIfNeeded(isRefresh:currentItemCount:)` | Starts skeleton on empty first-page refresh |
+| `finishListLoadPresentation(outcome:isRefresh:retryHandler:)` | Ends skeleton + syncs host empty/error (no refresh/load-more) |
+| `listPresentationOptions` / `FKBaseListPresentationDefaults` | Skeleton count, empty/error presets |
+| `listEmptyStateHostView` / `listEmptyStateClearingScrollView` | Default host `view`; clears legacy `tableView` overlays |
+| `listDataSourceRowCount` / `dequeueDefaultSkeletonTableCell` | DataSource skeleton helpers |
+| `handleListEmptyStatePrimaryAction()` | Programmatic pull-to-refresh from empty state |
+| `applyListEmptyState` / `syncListEmptyState` / `hideListEmptyState` | Host-based empty/error overlays |
+
+**Migration:** override `listEmptyStateHostView { tableView }` to restore scroll-embedded empty state.
 
 ---
 
