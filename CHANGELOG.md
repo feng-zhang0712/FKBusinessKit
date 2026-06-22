@@ -4,6 +4,8 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-22
+
 ### Added
 
 - **Base** — list presentation orchestration aligned with SACTrain list spec:
@@ -169,6 +171,7 @@ Tabs that use ``FKTabBarFilterTabPanelContent/panelKind`` still require a non-`n
 
 - Package scope is **new business/composite components** on FKKit. Legacy **BusinessKit** infrastructure (`FKBusinessKit.shared`, version, track, i18n, lifecycle, deeplink, utils) lives in **FKKit** (`FKCoreKit/BusinessKit`) — not in this repository.
 
+[0.8.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.8.0
 [0.7.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.7.0
 [0.6.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.6.0
 [0.5.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.5.0
