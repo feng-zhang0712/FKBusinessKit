@@ -25,6 +25,7 @@ enum FKTabBarFilterTwoColumnListExampleCase: Int, CaseIterable {
   case heightBehaviorScreenFraction
   case heightBehaviorAutomaticTallFloor
   case emptyCategorySyntheticSelection
+  case reselectOnChangeOnlyWhenSelectionChanged
   case onChangeOnlyWithoutSelectionHandler
   case customChromeAndListCellStyles
   case sectionCollapsePlainDefaults
@@ -54,6 +55,7 @@ enum FKTabBarFilterTwoColumnListExampleCase: Int, CaseIterable {
     case .heightBehaviorScreenFraction: return "Height behavior · screen fraction"
     case .heightBehaviorAutomaticTallFloor: return "Height behavior · automatic tall floor"
     case .emptyCategorySyntheticSelection: return "Empty category · synthetic selection"
+    case .reselectOnChangeOnlyWhenSelectionChanged: return "Reselect · onChange when selection changed"
     case .onChangeOnlyWithoutSelectionHandler: return "onChange only · no onSelection"
     case .customChromeAndListCellStyles: return "Custom chrome · list cell styles"
     case .sectionCollapsePlainDefaults: return "Section collapse · plain · disclosure"
@@ -106,6 +108,8 @@ enum FKTabBarFilterTwoColumnListExampleCase: Int, CaseIterable {
       return ".automatic with high minimum + screen fraction floor."
     case .emptyCategorySyntheticSelection:
       return "Category with no sections → synthetic FKTabBarFilterPanelSelection when chosen."
+    case .reselectOnChangeOnlyWhenSelectionChanged:
+      return "reselectBehavior .firesOnChangeOnlyWhenSelectionChanged (left, right, header)."
     case .onChangeOnlyWithoutSelectionHandler:
       return "onSelection omitted; only onChange fires (still logged)."
     case .customChromeAndListCellStyles:
@@ -329,6 +333,13 @@ enum FKTabBarFilterTwoColumnListExampleCase: Int, CaseIterable {
       return .init(
         model: Self.emptyCategoryModel(),
         configuration: .init(),
+        allowsMultipleSelection: false,
+        deliversSelectionEvents: true
+      )
+    case .reselectOnChangeOnlyWhenSelectionChanged:
+      return .init(
+        model: Self.emptyCategoryModel(),
+        configuration: .init(reselectBehavior: .firesOnChangeOnlyWhenSelectionChanged),
         allowsMultipleSelection: false,
         deliversSelectionEvents: true
       )

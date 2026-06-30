@@ -86,6 +86,8 @@ public final class FKTabBarFilterTwoColumnListViewController: UIViewController {
     /// Chevron beside the title when ``rightSectionHeaderBehavior`` is ``FKTabBarFilterTwoColumnRightSectionHeaderBehavior/togglesSectionCollapse``.
     public var showsSectionCollapseDisclosureIndicator: Bool
     public var singleSelectionScope: SingleSelectionScope
+    /// Whether repeated taps that leave selection unchanged invoke ``onChange`` and ``onSelection``.
+    public var reselectBehavior: FKTabBarFilterTwoColumnReselectBehavior
     public var heightBehavior: FKTabBarFilterPanelHeightBehavior
     /// Optional hook for left table cell customization.
     public var configureLeftCell: LeftCellContentConfiguration?
@@ -110,6 +112,7 @@ public final class FKTabBarFilterTwoColumnListViewController: UIViewController {
       rightSectionHeaderBehavior: FKTabBarFilterTwoColumnRightSectionHeaderBehavior = .standard,
       showsSectionCollapseDisclosureIndicator: Bool = true,
       singleSelectionScope: SingleSelectionScope = .withinSection,
+      reselectBehavior: FKTabBarFilterTwoColumnReselectBehavior = .firesOnChangeEveryTap,
       heightBehavior: FKTabBarFilterPanelHeightBehavior = .automatic(
         minimum: 120,
         screenMinimumFraction: 0.38,
@@ -132,6 +135,7 @@ public final class FKTabBarFilterTwoColumnListViewController: UIViewController {
       self.rightSectionHeaderBehavior = rightSectionHeaderBehavior
       self.showsSectionCollapseDisclosureIndicator = showsSectionCollapseDisclosureIndicator
       self.singleSelectionScope = singleSelectionScope
+      self.reselectBehavior = reselectBehavior
       self.heightBehavior = heightBehavior
       self.configureLeftCell = configureLeftCell
       self.configureRightCell = configureRightCell
@@ -330,6 +334,9 @@ public final class FKTabBarFilterTwoColumnListViewController: UIViewController {
     var sections = model.sectionsByCategoryID[catID] ?? []
     guard sections.indices.contains(sectionIndex) else { return }
     let target = sections[sectionIndex]
+    let headerAlreadySelected = selectedHeaderSectionID == target.id
+      && sections.allSatisfy { $0.items.allSatisfy { !$0.isSelected } }
+    let shouldFire = configuration.reselectBehavior.shouldFireCallbacks(whenSelectionChanged: !headerAlreadySelected)
     selectedHeaderSectionID = target.id
 
     for sIdx in sections.indices {
@@ -339,6 +346,7 @@ public final class FKTabBarFilterTwoColumnListViewController: UIViewController {
     }
     model.sectionsByCategoryID[catID] = sections
     rightTable.reloadData()
+    guard shouldFire else { return }
     onChange(model)
 
     let headerTitle = target.title ?? ""
@@ -480,15 +488,20 @@ extension FKTabBarFilterTwoColumnListViewController: UITableViewDataSource, UITa
   public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
     if tableView === leftTable {
       tableView.deselectRow(at: indexPath, animated: false)
+      let previousSelectedID = selectedCategoryID
       let selectedCategory = model.categories[indexPath.row]
       let tappedID = selectedCategory.id
       for i in model.categories.indices {
         model.categories[i].isSelected = (model.categories[i].id == tappedID)
       }
       selectedHeaderSectionID = nil
-      onChange(model)
+      let categoryChanged = previousSelectedID != tappedID
+      let shouldFire = configuration.reselectBehavior.shouldFireCallbacks(whenSelectionChanged: categoryChanged)
+      if shouldFire {
+        onChange(model)
+      }
       let sections = model.sectionsByCategoryID[tappedID] ?? []
-      if sections.isEmpty {
+      if sections.isEmpty, shouldFire {
         let item = FKTabBarFilterOptionItem(id: selectedCategory.id, title: selectedCategory.title, isSelected: true)
         onSelection?(.init(sectionID: nil, item: item, effectiveSelectionMode: .single))
       }
@@ -513,6 +526,12 @@ extension FKTabBarFilterTwoColumnListViewController: UITableViewDataSource, UITa
       requested: sec.selectionMode,
       allowsMultipleFromTab: allowsMultipleSelection
     )
+
+    let selectionChanged: Bool = switch effectiveMode {
+    case .single: !tapped.isSelected
+    case .multiple: true
+    }
+    let shouldFire = configuration.reselectBehavior.shouldFireCallbacks(whenSelectionChanged: selectionChanged)
 
     switch effectiveMode {
     case .single:
@@ -544,6 +563,7 @@ extension FKTabBarFilterTwoColumnListViewController: UITableViewDataSource, UITa
     } else {
       rightTable.reloadSections(IndexSet(integer: indexPath.section), with: .none)
     }
+    guard shouldFire else { return }
     onChange(model)
     onSelection?(.init(sectionID: sec.id, item: tapped, effectiveSelectionMode: effectiveMode))
   }

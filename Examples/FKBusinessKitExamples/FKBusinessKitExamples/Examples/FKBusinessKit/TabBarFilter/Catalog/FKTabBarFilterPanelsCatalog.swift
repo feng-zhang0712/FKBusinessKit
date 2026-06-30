@@ -60,6 +60,7 @@ enum FKTabBarFilterPanelsCatalog {
       ]),
       ("Two-column list · edge cases", [
         .emptyCategorySyntheticSelection,
+        .reselectOnChangeOnlyWhenSelectionChanged,
         .onChangeOnlyWithoutSelectionHandler,
       ]),
     ].map { title, cases in
@@ -91,7 +92,7 @@ enum FKTabBarFilterPanelsCatalog {
         .disabledPillItem,
       ]),
       ("Two-column grid · height", [.heightBehaviorFixed, .heightBehaviorCapped]),
-      ("Two-column grid · callbacks", [.onChangeOnlyNoSelection]),
+      ("Two-column grid · callbacks", [.onChangeOnlyNoSelection, .reselectOnChangeOnlyWhenSelectionChanged]),
     ].map { title, cases in
       FKTabBarFilterExampleListSection(title: title, rows: cases.map(\.listRow))
     }

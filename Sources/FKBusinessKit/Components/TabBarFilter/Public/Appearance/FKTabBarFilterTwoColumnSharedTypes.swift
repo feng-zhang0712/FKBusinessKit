@@ -10,6 +10,26 @@ public enum FKTabBarFilterTwoColumnSingleSelectionScope: Hashable, Sendable {
   case globalAcrossSections
 }
 
+/// Whether repeated taps that do not change the current selection invoke ``onChange`` and ``onSelection``.
+///
+/// Applies to left category rows, right option cells, and selectable section headers in
+/// ``FKTabBarFilterTwoColumnListViewController`` and ``FKTabBarFilterTwoColumnGridViewController``.
+public enum FKTabBarFilterTwoColumnReselectBehavior: Hashable, Sendable {
+  /// Callbacks run on every qualifying tap, even when the selection state is unchanged.
+  case firesOnChangeEveryTap
+  /// Callbacks run only when the interaction changes selection (category, item, or header pick).
+  case firesOnChangeOnlyWhenSelectionChanged
+
+  func shouldFireCallbacks(whenSelectionChanged selectionChanged: Bool) -> Bool {
+    switch self {
+    case .firesOnChangeEveryTap:
+      return true
+    case .firesOnChangeOnlyWhenSelectionChanged:
+      return selectionChanged
+    }
+  }
+}
+
 /// Typography and insets for titled section headers on the right column (list table headers and grid supplementary views).
 public struct FKTabBarFilterTwoColumnRightHeaderStyle {
   public var normalTextColor: UIColor

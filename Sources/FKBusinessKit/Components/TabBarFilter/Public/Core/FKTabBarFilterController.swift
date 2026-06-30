@@ -180,6 +180,27 @@ public final class FKTabBarFilterController<TabID: Hashable>: UIViewController {
     configuration = next
   }
 
+  /// Re-applies anchor layout when the panel is expanded and the strip hierarchy may have shifted
+  /// (for example after a full-screen modal dismisses over the presenting view controller).
+  public func relayoutExpandedPanelIfNeeded(animated: Bool = false) {
+    guard isPanelExpanded else { return }
+    guard fkSheetPresentationController?.isPresented == true else { return }
+
+    view.layoutIfNeeded()
+    tabBarHost.view.layoutIfNeeded()
+    configuration.anchorPlacement?.overlayHostView?.layoutIfNeeded()
+    fkSheetPresentationController?.updateLayout(animated: animated, duration: 0, options: .curveLinear)
+
+    DispatchQueue.main.async { [weak self] in
+      guard let self, self.isPanelExpanded else { return }
+      guard self.fkSheetPresentationController?.isPresented == true else { return }
+      self.view.layoutIfNeeded()
+      self.tabBarHost.view.layoutIfNeeded()
+      self.configuration.anchorPlacement?.overlayHostView?.layoutIfNeeded()
+      self.fkSheetPresentationController?.updateLayout(animated: false, duration: 0, options: .curveLinear)
+    }
+  }
+
   public func embed(in parent: UIViewController, pinTo container: UIView? = nil) {
     guard let host = container ?? parent.view else {
       assertionFailure("embed(in:pinTo:) requires a loaded parent.view or an explicit container.")
@@ -210,6 +231,7 @@ public final class FKTabBarFilterController<TabID: Hashable>: UIViewController {
     super.viewDidAppear(animated)
     syncChevronAccessoryAnimations(visualExpandedTabID: expandedTabInternal, animated: false)
     reconcileIfPossible()
+    relayoutExpandedPanelIfNeeded(animated: false)
   }
 
   public override func viewDidLayoutSubviews() {

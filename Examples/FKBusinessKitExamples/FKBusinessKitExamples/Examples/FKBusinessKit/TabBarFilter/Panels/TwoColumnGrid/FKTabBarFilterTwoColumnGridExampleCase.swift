@@ -25,6 +25,8 @@ enum FKTabBarFilterTwoColumnGridExampleCase: Int, CaseIterable {
   case singleColumnDense
   case fourColumnsWide
   case disabledPillItem
+  case emptyCategorySyntheticSelection
+  case reselectOnChangeOnlyWhenSelectionChanged
   case onChangeOnlyNoSelection
 
   var menuTitle: String {
@@ -44,6 +46,8 @@ enum FKTabBarFilterTwoColumnGridExampleCase: Int, CaseIterable {
     case .singleColumnDense: return "One column grid"
     case .fourColumnsWide: return "Four columns"
     case .disabledPillItem: return "Disabled pill"
+    case .emptyCategorySyntheticSelection: return "Empty category · synthetic selection"
+    case .reselectOnChangeOnlyWhenSelectionChanged: return "Reselect · onChange when selection changed"
     case .onChangeOnlyNoSelection: return "onChange only"
     }
   }
@@ -65,6 +69,8 @@ enum FKTabBarFilterTwoColumnGridExampleCase: Int, CaseIterable {
     case .singleColumnDense: return "itemColumns 1."
     case .fourColumnsWide: return "itemColumns 4."
     case .disabledPillItem: return "One disabled chip."
+    case .emptyCategorySyntheticSelection: return "Category with no sections → synthetic onSelection when chosen."
+    case .reselectOnChangeOnlyWhenSelectionChanged: return "reselectBehavior .firesOnChangeOnlyWhenSelectionChanged (left, right, header)."
     case .onChangeOnlyNoSelection: return "onSelection nil."
     }
   }
@@ -197,6 +203,23 @@ enum FKTabBarFilterTwoColumnGridExampleCase: Int, CaseIterable {
         allowsMultipleSelection: false,
         deliversSelectionEvents: true
       )
+    case .emptyCategorySyntheticSelection:
+      return .init(
+        model: Self.gridEmptyCategoryModel(),
+        configuration: .init(rightSectionHeaderBehavior: .standard),
+        allowsMultipleSelection: false,
+        deliversSelectionEvents: true
+      )
+    case .reselectOnChangeOnlyWhenSelectionChanged:
+      return .init(
+        model: Self.gridEmptyCategoryModel(),
+        configuration: .init(
+          rightSectionHeaderBehavior: .standard,
+          reselectBehavior: .firesOnChangeOnlyWhenSelectionChanged
+        ),
+        allowsMultipleSelection: false,
+        deliversSelectionEvents: true
+      )
     case .onChangeOnlyNoSelection:
       return .init(
         model: Self.gridCatalogModel(),
@@ -208,6 +231,7 @@ enum FKTabBarFilterTwoColumnGridExampleCase: Int, CaseIterable {
   }
 
   private static let catA = FKTabBarFilterID(rawValue: "grid.cat.a")
+  private static let catEmpty = FKTabBarFilterID(rawValue: "grid.cat.empty")
 
   private static func gridCatalogModel() -> FKTabBarFilterTwoColumnModel {
     let categories = [
@@ -346,6 +370,27 @@ enum FKTabBarFilterTwoColumnGridExampleCase: Int, CaseIterable {
       catA: [
         FKTabBarFilterSection(id: FKTabBarFilterID(rawValue: "gm"), title: "Numbers", selectionMode: .single, items: items),
       ],
+    ]
+    return FKTabBarFilterTwoColumnModel(categories: categories, sectionsByCategoryID: sections)
+  }
+
+  private static func gridEmptyCategoryModel() -> FKTabBarFilterTwoColumnModel {
+    let categories: [FKTabBarFilterTwoColumnModel.Category] = [
+      .init(id: catA, title: "With items", isSelected: true),
+      .init(id: catEmpty, title: "All", isSelected: false),
+    ]
+    let sections: [FKTabBarFilterID: [FKTabBarFilterSection]] = [
+      catA: [
+        FKTabBarFilterSection(
+          id: FKTabBarFilterID(rawValue: "ge1"),
+          title: "Data",
+          selectionMode: .single,
+          items: [
+            FKTabBarFilterOptionItem(id: FKTabBarFilterID(rawValue: "ge1a"), title: "Only here", isSelected: true),
+          ]
+        ),
+      ],
+      catEmpty: [],
     ]
     return FKTabBarFilterTwoColumnModel(categories: categories, sectionsByCategoryID: sections)
   }

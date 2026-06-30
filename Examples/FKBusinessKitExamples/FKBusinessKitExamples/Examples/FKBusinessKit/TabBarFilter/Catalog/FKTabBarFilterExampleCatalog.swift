@@ -39,6 +39,10 @@ enum FKTabBarFilterExampleCatalog {
           title: "Configuration playground",
           subtitle: "Tab switching, caching, backdrop, hairline, and slow relayout toggles."
         ) { FKTabBarFilterConfigurationPlaygroundViewController() },
+        FKTabBarFilterExampleListRow(
+          title: "Modal dismiss relayout",
+          subtitle: "embedStrip + overlayHost; full-screen modal dismiss (animated: false) keeps anchor flush."
+        ) { FKTabBarFilterModalDismissRelayoutExampleViewController() },
         FKTabBarFilterStripRecipe.customPanelKind.listRow,
       ]
     )
