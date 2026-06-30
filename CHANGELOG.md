@@ -4,6 +4,22 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-30
+
+### Added
+
+- **TabBarFilter** — ``FKTabBarFilterController/relayoutExpandedPanelIfNeeded(animated:)`` to re-apply anchor layout after the presenting view controller returns from a full-screen modal (also invoked from ``viewDidAppear`` when expanded).
+- **TabBarFilter** — ``FKTabBarFilterTwoColumnReselectBehavior`` and ``Configuration/reselectBehavior`` on two-column list/grid panels to suppress redundant ``onChange`` / ``onSelection`` when the user re-taps an unchanged left category, right option, or selectable section header.
+- **FKBusinessKitExamples** — TabBarFilter demos for modal-dismiss anchor relayout, empty-category synthetic selection (grid), and reselect policy.
+
+### Changed
+
+- Raise minimum FKKit dependency to `0.73.0` (`Package.swift`, `FKBusinessKit.podspec`, README).
+
+### Fixed
+
+- **TabBarFilter** — ``FKTabBarFilterTwoColumnGridViewController`` now fires ``onSelection`` when the user selects a left category whose ``sectionsByCategoryID`` entry is empty (aligned with two-column list), enabling dismiss-and-refresh flows such as synthetic “All” categories.
+
 ## [0.8.0] - 2026-06-22
 
 ### Added
@@ -171,6 +187,7 @@ Tabs that use ``FKTabBarFilterTabPanelContent/panelKind`` still require a non-`n
 
 - Package scope is **new business/composite components** on FKKit. Legacy **BusinessKit** infrastructure (`FKBusinessKit.shared`, version, track, i18n, lifecycle, deeplink, utils) lives in **FKKit** (`FKCoreKit/BusinessKit`) — not in this repository.
 
+[0.9.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.9.0
 [0.8.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.8.0
 [0.7.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.7.0
 [0.6.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.6.0

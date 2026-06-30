@@ -1,7 +1,7 @@
 # FKBusinessKit
 
 [![iOS](https://img.shields.io/badge/iOS-15.0%2B-blue.svg)](https://developer.apple.com/ios/)
-[![Version](https://img.shields.io/badge/version-0.8.0-blue.svg)](https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.8.0)
+[![Version](https://img.shields.io/badge/version-0.9.0-blue.svg)](https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.9.0)
 [![Swift](https://img.shields.io/badge/Swift-6.0%2B-orange.svg)](https://swift.org/)
 [![SPM](https://img.shields.io/badge/SPM-supported-brightgreen.svg)](https://swift.org/package-manager/)
 [![CocoaPods](https://img.shields.io/badge/CocoaPods-supported-ee3322.svg)](https://cocoapods.org/)
@@ -81,14 +81,14 @@ FKBusinessKit/
 ## Installation (SPM)
 
 ### Xcode
-1. Add **FKBusinessKit**: `https://github.com/feng-zhang0712/FKBusinessKit.git` (from `0.8.0`)
+1. Add **FKBusinessKit**: `https://github.com/feng-zhang0712/FKBusinessKit.git` (from `0.9.0`)
 2. Link **`FKBusinessKit`** to your app target (FKKit is resolved transitively).
 3. **Optional:** also add **FKKit** (`from: "0.73.0"`) if many targets use `FKUIKit` directly without `import FKBusinessKit`.
 
 ### Package.swift (typical app)
 ```swift
 dependencies: [
-  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.8.0"),
+  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.9.0"),
 ],
 targets: [
   .target(
@@ -104,7 +104,7 @@ targets: [
 ```swift
 dependencies: [
   .package(url: "https://github.com/feng-zhang0712/FKKit.git", from: "0.73.0"),
-  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.8.0"),
+  .package(url: "https://github.com/feng-zhang0712/FKBusinessKit.git", from: "0.9.0"),
 ],
 targets: [
   .target(
@@ -131,7 +131,7 @@ dependencies: [
 platform :ios, '15.0'
 
 pod 'FKCoreKit',     :git => 'https://github.com/feng-zhang0712/FKKit.git', :tag => '0.73.0'
-pod 'FKBusinessKit', :git => 'https://github.com/feng-zhang0712/FKBusinessKit.git', :tag => '0.8.0'
+pod 'FKBusinessKit', :git => 'https://github.com/feng-zhang0712/FKBusinessKit.git', :tag => '0.9.0'
 ```
 
 Local development:
