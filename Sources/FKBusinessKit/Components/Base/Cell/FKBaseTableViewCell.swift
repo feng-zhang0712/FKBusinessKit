@@ -78,7 +78,9 @@ open class FKBaseTableViewCell: UITableViewCell {
 
   open override func awakeFromNib() {
     super.awakeFromNib()
-    performInitialSetupIfNeeded()
+    MainActor.assumeIsolated {
+      performInitialSetupIfNeeded()
+    }
   }
 
   open override func prepareForReuse() {

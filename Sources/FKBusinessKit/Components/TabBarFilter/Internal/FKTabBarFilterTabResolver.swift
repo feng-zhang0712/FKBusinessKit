@@ -5,7 +5,7 @@ import FKUIKit
 enum FKTabBarFilterTabResolver {
   private static let missingPanelFactory = FKTabBarFilterPanelFactory(sourcesByPanelKind: [:])
 
-  static func resolve<TabID: Hashable>(
+  static func resolve<TabID: Hashable & Sendable>(
     tabs: [FKTabBarFilterTab<TabID>],
     panelFactory: FKTabBarFilterPanelFactory?,
     runtime: FKTabBarFilterRuntimeState<TabID>,

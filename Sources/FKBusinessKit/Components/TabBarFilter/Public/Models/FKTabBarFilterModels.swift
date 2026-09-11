@@ -49,7 +49,7 @@ public struct FKTabBarFilterPanelSelection: Sendable {
 }
 
 /// Full selection event for a strip tab (after the panel model has been updated).
-public struct FKTabBarFilterSelectionContext<TabID: Hashable> {
+public struct FKTabBarFilterSelectionContext<TabID: Hashable & Sendable> {
   public let tabID: TabID
   public let panelKind: FKTabBarFilterPanelKind
   public let sectionID: FKTabBarFilterID?

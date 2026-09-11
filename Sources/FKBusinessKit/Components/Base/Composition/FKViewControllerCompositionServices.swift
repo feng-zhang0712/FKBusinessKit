@@ -113,7 +113,6 @@ public final class FKCompositeKeyboardObservation {
       queue: .main
     ) { [weak self] notification in
       guard
-        let self,
         let userInfo = notification.userInfo,
         let frame = (userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue
       else { return }
@@ -121,7 +120,9 @@ public final class FKCompositeKeyboardObservation {
       let curveRaw = (userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber)?.intValue
         ?? UIView.AnimationCurve.easeInOut.rawValue
       let curve = UIView.AnimationCurve(rawValue: curveRaw) ?? .easeInOut
-      self.onWillChangeFrame?(frame, duration, curve)
+      MainActor.assumeIsolated {
+        self?.onWillChangeFrame?(frame, duration, curve)
+      }
     }
 
     let willHide = center.addObserver(
@@ -129,13 +130,14 @@ public final class FKCompositeKeyboardObservation {
       object: nil,
       queue: .main
     ) { [weak self] notification in
-      guard let self else { return }
       let userInfo = notification.userInfo
       let duration = (userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber)?.doubleValue ?? 0.25
       let curveRaw = (userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber)?.intValue
         ?? UIView.AnimationCurve.easeInOut.rawValue
       let curve = UIView.AnimationCurve(rawValue: curveRaw) ?? .easeInOut
-      self.onWillHide?(duration, curve)
+      MainActor.assumeIsolated {
+        self?.onWillHide?(duration, curve)
+      }
     }
 
     observers = [willChange, willHide]
@@ -288,7 +290,7 @@ public final class FKCompositeInteractivePopGesture {
 // MARK: - Tap to dismiss keyboard
 
 @MainActor
-public final class FKCompositeTapToDismissKeyboard: NSObject {
+public final class FKCompositeTapToDismissKeyboard: NSObject, UIGestureRecognizerDelegate {
   public var isEnabled: Bool = true {
     didSet { updateGestureAttachment() }
   }
@@ -298,6 +300,7 @@ public final class FKCompositeTapToDismissKeyboard: NSObject {
   private lazy var gesture: UITapGestureRecognizer = {
     let gesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
     gesture.cancelsTouchesInView = false
+    gesture.delegate = self
     return gesture
   }()
 
@@ -326,5 +329,20 @@ public final class FKCompositeTapToDismissKeyboard: NSObject {
     } else if gesture.view != nil {
       view.removeGestureRecognizer(gesture)
     }
+  }
+
+  public func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldReceive touch: UITouch
+  ) -> Bool {
+    // Ignore controls / text inputs so Send (and similar) still receive touchUpInside.
+    // Otherwise endEditing collapses the keyboard layout guide and cancels the button touch.
+    var view = touch.view
+    while let current = view {
+      if current is UIControl { return false }
+      if current is UITextView || current is UITextField { return false }
+      view = current.superview
+    }
+    return true
   }
 }

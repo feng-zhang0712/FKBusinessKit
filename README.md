@@ -37,6 +37,7 @@ It is distributed via **Swift Package Manager (SPM)** and **CocoaPods**. `import
 - **`Base`** — inheritance-friendly view controller bases and optional composition layer ([component README](Sources/FKBusinessKit/Components/Base/README.md)).
 - **`TabBarFilter`** — anchored filter strip with built-in panel kinds and custom panel support ([component README](Sources/FKBusinessKit/Components/TabBarFilter/README.md)).
 - **`CellKit`** — business list and collection cells with ListKit registration glue ([component README](Sources/FKBusinessKit/Components/CellKit/README.md)).
+- **`CommentKit`** — comment list UI kit (flat `replyTo`, like/reply/more, composer; protocol-injected data) ([component README](Sources/FKBusinessKit/Components/CommentKit/README.md), [design guide](docs/FKCommentKit_DESIGN.md)).
 - **Widgets integration** — compose FKUIKit Widgets with Base/TabBarFilter/CellKit ([design fragment 中文](docs/FKWidgets-Integration_DESIGN.md)).
 - Depends on **FKCoreKit** and **FKUIKit** (FKKit `0.73.0+`, see [FKKit dependency & versions](#fkit-dependency--versions)).
 - GitHub Actions CI: builds on **iOS Simulator**.
@@ -51,11 +52,12 @@ FKBusinessKit/
 ├─ scripts/
 ├─ docs/
 │  ├─ FKWidgets-Integration_DESIGN.md
-│  └─ FKCellKit_DESIGN.md
+│  ├─ FKCellKit_DESIGN.md
+│  └─ FKCommentKit_DESIGN.md
 ├─ Sources/
 │  └─ FKBusinessKit/
 │     ├─ FKBusinessKit.swift    # Module marker (extend with new components here)
-│     ├─ Components/            # Base · TabBarFilter · CellKit
+│     ├─ Components/            # Base · TabBarFilter · CellKit · CommentKit
 │     └─ README.md
 └─ Examples/
    └─ FKBusinessKitExamples/

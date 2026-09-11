@@ -3,6 +3,7 @@ import UIKit
 // MARK: - Control
 
 /// Direct helpers for enabling, capturing, and restoring interactive-pop gesture state.
+@MainActor
 enum FKBaseNavigationInteractivePopGestureControl {
   static func apply(allowPop: Bool, on navigationController: UINavigationController) {
     navigationController.interactivePopGestureRecognizer?.isEnabled = allowPop
@@ -74,12 +75,12 @@ enum FKBaseNavigationInteractivePopGestureInstaller {
     var originalContentPopDelegate: UIGestureRecognizerDelegate?
     if #available(iOS 26.0, *) {
       originalContentPopDelegate =
-        navigationController.interactiveContentPopGestureRecognizer?.delegate as? UIGestureRecognizerDelegate
+        navigationController.interactiveContentPopGestureRecognizer?.delegate
     }
 
     let interceptor = FKBaseNavigationInteractivePopGestureDelegate(
       navigationController: navigationController,
-      originalPopGestureDelegate: pop.delegate as? UIGestureRecognizerDelegate,
+      originalPopGestureDelegate: pop.delegate,
       originalContentPopGestureDelegate: originalContentPopDelegate
     )
     pop.delegate = interceptor

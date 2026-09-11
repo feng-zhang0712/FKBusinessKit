@@ -12,7 +12,7 @@ public enum FKTabBarFilterTabPanelContent {
 }
 
 /// One filter strip tab and the panel content it presents.
-public struct FKTabBarFilterTab<TabID: Hashable> {
+public struct FKTabBarFilterTab<TabID: Hashable & Sendable> {
   public let id: TabID
   public let panelContent: FKTabBarFilterTabPanelContent
   public let title: () -> String

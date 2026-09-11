@@ -63,7 +63,7 @@ public final class FKCellKitValueHandlerRegistry {
 
 extension FKDiffableTableViewController {
   private enum AssociatedKeys {
-    nonisolated(unsafe) static var valueHandlers = "fk.cellKit.valueHandlers"
+    nonisolated(unsafe) static var valueHandlers: UInt8 = 0
   }
 
   /// Optional registry for CellKit interactive custom rows on this controller.

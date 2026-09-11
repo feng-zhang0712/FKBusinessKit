@@ -1,6 +1,7 @@
 import UIKit
 
 /// Helpers for enforcing the base controller’s scroll-bounce defaults.
+@MainActor
 enum FKBaseScrollBounce {
   /// Recursively applies the same bounce setting to every scroll view in the view subtree.
   ///

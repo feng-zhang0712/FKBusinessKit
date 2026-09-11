@@ -16,6 +16,9 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.source_files = 'Sources/FKBusinessKit/**/*.swift'
+  s.resource_bundles = {
+    'FKBusinessKit' => ['Sources/FKBusinessKit/Resources/Assets.xcassets']
+  }
   s.dependency 'FKCoreKit', '~> 0.73.0'
   s.dependency 'FKUIKit', '~> 0.73.0'
 end

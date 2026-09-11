@@ -1,7 +1,7 @@
 import UIKit
 
 @MainActor
-final class FKTabBarFilterRuntimeState<TabID: Hashable> {
+final class FKTabBarFilterRuntimeState<TabID: Hashable & Sendable> {
   weak var controller: FKTabBarFilterController<TabID>?
   var onSelection: FKTabBarFilterSelectionHandler<TabID>?
   private var titleOverrides: [TabID: String] = [:]

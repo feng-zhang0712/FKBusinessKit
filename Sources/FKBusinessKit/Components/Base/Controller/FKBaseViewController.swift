@@ -378,13 +378,20 @@ open class FKBaseViewController: UIViewController, FKViewControllerCompositeHost
 
   /// Installs a custom back button on the left navigation item.
   public func configureBackButton(image: UIImage? = nil, title: String? = nil, tintColor: UIColor? = nil) {
-    let button = UIButton(type: .system)
-    let symbolImage = image ?? UIImage(systemName: "chevron.backward")
-    button.setImage(symbolImage, for: .normal)
-    button.setTitle(title, for: .normal)
-    button.tintColor = tintColor ?? view.tintColor
-    button.setTitleColor(tintColor ?? view.tintColor, for: .normal)
-    button.contentEdgeInsets = FKBaseUIConstants.backButtonContentInsets
+    var configuration = UIButton.Configuration.plain()
+    configuration.image = image ?? UIImage(systemName: "chevron.backward")
+    configuration.title = title
+    let resolvedTint = tintColor ?? view.tintColor
+    configuration.baseForegroundColor = resolvedTint
+    let insets = FKBaseUIConstants.backButtonContentInsets
+    configuration.contentInsets = NSDirectionalEdgeInsets(
+      top: insets.top,
+      leading: insets.left,
+      bottom: insets.bottom,
+      trailing: insets.right
+    )
+    let button = UIButton(configuration: configuration)
+    button.tintColor = resolvedTint
     button.addTarget(self, action: #selector(handleBackButtonTapped), for: .touchUpInside)
     navigationItem.leftBarButtonItem = UIBarButtonItem(customView: button)
   }

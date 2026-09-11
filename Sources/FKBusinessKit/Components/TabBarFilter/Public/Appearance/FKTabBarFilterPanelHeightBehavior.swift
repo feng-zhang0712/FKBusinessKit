@@ -15,6 +15,7 @@ public enum FKTabBarFilterPanelHeightBehavior: Sendable {
   /// Use a fraction of screen height. You may still clamp via min/max.
   case screenFraction(CGFloat, minimum: CGFloat = 80, maximum: CGFloat? = nil)
 
+  @MainActor
   func resolvedHeight(for estimatedContentHeight: CGFloat) -> CGFloat {
     switch self {
     case let .automatic(minimum, screenMinimumFraction, maximumScreenFraction):

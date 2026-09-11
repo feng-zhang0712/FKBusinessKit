@@ -35,6 +35,10 @@ let package = Package(
         "Components/TabBarFilter/README.md",
         "Components/Base/README.md",
         "Components/CellKit/README.md",
+        "Components/CommentKit/README.md",
+      ],
+      resources: [
+        .process("Resources/Assets.xcassets"),
       ]
     ),
   ],

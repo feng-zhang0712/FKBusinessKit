@@ -27,8 +27,6 @@ public enum FKBaseListPresentationCoordinator {
     hideEmptyState: () -> Void,
     retryHandler: ((FKEmptyStateAction) -> Void)? = nil
   ) {
-    let animated = options.animatesEmptyState
-
     switch outcome {
     case .content:
       hideEmptyState()

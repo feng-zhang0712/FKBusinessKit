@@ -2,14 +2,14 @@ import UIKit
 import FKUIKit
 
 /// Invoked on the main actor after the panel applies the selection; single-select panels also update the tab title and collapse.
-public typealias FKTabBarFilterSelectionHandler<TabID: Hashable> = @MainActor (_ context: FKTabBarFilterSelectionContext<TabID>) -> Void
+public typealias FKTabBarFilterSelectionHandler<TabID: Hashable & Sendable> = @MainActor (_ context: FKTabBarFilterSelectionContext<TabID>) -> Void
 
 /// Filter strip: ``FKTabBar`` plus anchor-attached panels via ``FKSheetPresentationController``.
 ///
 /// Factory-backed panels use ``FKTabBarFilterPanelFactory`` (optional when every tab uses custom ``FKTabBarFilterTabPanelContent``).
 /// Custom panels use ``FKTabBarFilterTabPanelContent/view`` or ``FKTabBarFilterTabPanelContent/viewController``.
 @MainActor
-public final class FKTabBarFilterController<TabID: Hashable>: UIViewController {
+public final class FKTabBarFilterController<TabID: Hashable & Sendable>: UIViewController {
   /// Why the panel transitioned to the collapsed state.
   public enum DismissReason: Equatable, Sendable {
     case userToggledSameTab

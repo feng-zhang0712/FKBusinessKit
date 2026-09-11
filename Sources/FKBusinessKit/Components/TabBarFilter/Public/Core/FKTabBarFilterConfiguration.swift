@@ -4,7 +4,7 @@ import FKUIKit
 /// Configuration for ``FKTabBarFilterController``: ``FKTabBar`` strip, anchored presentation, tab appearance defaults, and lifecycle hooks.
 ///
 /// Panel **content** for factory-backed tabs belongs on ``FKTabBarFilterPanelFactory`` and per-panel `Configuration` types.
-public struct FKTabBarFilterConfiguration<TabID: Hashable> {
+public struct FKTabBarFilterConfiguration<TabID: Hashable & Sendable> {
   /// Policy for retaining built ``UIViewController`` instances per tab.
   public enum ContentCachingPolicy: Equatable, Sendable {
     case recreate

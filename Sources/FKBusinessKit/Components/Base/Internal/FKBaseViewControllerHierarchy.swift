@@ -1,6 +1,7 @@
 import UIKit
 
 /// Small hierarchy predicates used by the base controller/composition layer.
+@MainActor
 enum FKBaseViewControllerHierarchy {
   /// Returns `true` when the controller is being dismissed, popped, or removed from its parent.
   ///

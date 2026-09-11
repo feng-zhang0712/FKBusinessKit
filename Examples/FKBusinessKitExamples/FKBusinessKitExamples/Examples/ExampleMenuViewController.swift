@@ -6,6 +6,7 @@ final class ExampleMenuViewController: UITableViewController {
   private enum Row: Int, CaseIterable {
     case base
     case cellKit
+    case commentKit
     case tabBarFilter
 
     var title: String {
@@ -14,6 +15,8 @@ final class ExampleMenuViewController: UITableViewController {
         return "Base"
       case .cellKit:
         return "CellKit"
+      case .commentKit:
+        return "CommentKit"
       case .tabBarFilter:
         return "TabBarFilter"
       }
@@ -25,6 +28,8 @@ final class ExampleMenuViewController: UITableViewController {
         return "FKBaseViewController, table/collection bases, composition, and search integration."
       case .cellKit:
         return "Business list cells, feed rows, collection tiles, ListKit glue, and integration demos."
+      case .commentKit:
+        return "Comment list UI kit — flat replyTo threads, actions, composer, and protocol injection."
       case .tabBarFilter:
         return "FKTabBarFilterController, anchoring, and panel component recipes."
       }
@@ -38,6 +43,11 @@ final class ExampleMenuViewController: UITableViewController {
         return FKCellKitGroupedListHubViewController(
           title: "CellKit",
           sections: FKCellKitExampleCatalog.rootSections
+        )
+      case .commentKit:
+        return FKCommentKitGroupedListHubViewController(
+          title: "CommentKit",
+          sections: FKCommentKitExampleCatalog.rootSections
         )
       case .tabBarFilter:
         return FKTabBarFilterExamplesHubViewController()

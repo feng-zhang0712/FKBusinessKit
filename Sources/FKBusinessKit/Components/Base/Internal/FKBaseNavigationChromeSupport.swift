@@ -3,6 +3,7 @@ import UIKit
 // MARK: - Snapshot
 
 /// Captured navigation bar state used to restore system chrome when a controller exits.
+@MainActor
 struct FKBaseNavigationChromeSnapshot {
   let wasNavigationBarHidden: Bool
   let standardAppearance: UINavigationBarAppearance
@@ -15,6 +16,7 @@ struct FKBaseNavigationChromeSnapshot {
 
 // MARK: - Appearance copying
 
+@MainActor
 enum FKBaseNavigationChromeAppearanceCopying {
   static func capture(from navigationController: UINavigationController) -> FKBaseNavigationChromeSnapshot {
     let bar = navigationController.navigationBar
@@ -47,8 +49,7 @@ enum FKBaseNavigationChromeAppearanceCopying {
   }
 
   static func copied(_ appearance: UINavigationBarAppearance) -> UINavigationBarAppearance {
-    guard let copy = appearance.copy() as? UINavigationBarAppearance else { return appearance }
-    return copy
+    appearance.copy()
   }
 
   static func copiedIfPresent(_ appearance: UINavigationBarAppearance?) -> UINavigationBarAppearance? {
@@ -66,6 +67,7 @@ enum FKBaseNavigationChromeAppearanceCopying {
 
 // MARK: - Style application
 
+@MainActor
 enum FKBaseNavigationChromeApplicator {
   static func applyConfiguration(
     visibility: FKBaseViewController.NavigationBarVisibility,
@@ -160,6 +162,7 @@ enum FKBaseUIConstants {
   static let backButtonContentInsets = UIEdgeInsets(top: 4.0, left: 0.0, bottom: 4.0, right: 0.0)
 }
 
+@MainActor
 enum FKBaseNavigationGradientImage {
   static func make(
     colors: [UIColor],

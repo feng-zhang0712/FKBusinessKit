@@ -2,7 +2,7 @@ import UIKit
 import FKUIKit
 
 /// Internal tab descriptor used to build ``FKTabBar`` items and panel content.
-struct FKTabBarFilterResolvedTab<TabID: Hashable> {
+struct FKTabBarFilterResolvedTab<TabID: Hashable & Sendable> {
   struct StateSnapshot: Equatable {
     var expandedTab: TabID?
 

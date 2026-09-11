@@ -4,6 +4,7 @@ import UIKit
 ///
 /// Call ``install(_:on:hidesNavigationBarDuringPresentation:)`` from the host view controller
 /// (typically after creating the search controller in ``setupUI()`` or ``setupBindings()``).
+@MainActor
 public enum FKBaseSearchIntegration {
 
   /// Attaches the search controller to the host’s navigation item and sets presentation context.

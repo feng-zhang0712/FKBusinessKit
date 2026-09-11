@@ -8,7 +8,7 @@ public enum FKTabBarFilterHosting {
   /// Adds `filter` as a child of `parent`, pins its view under `topAnchor` with a fixed height, optionally tightens ``FKTabBar`` item button insets (see ``useCompactTabButtonInsets``), pins the anchored overlay to `overlayHost`, and returns `filter.view` for further constraints.
   @MainActor
   @discardableResult
-  public static func embedStrip<TabID: Hashable>(
+  public static func embedStrip<TabID: Hashable & Sendable>(
     _ filter: FKTabBarFilterController<TabID>,
     in parent: UIViewController,
     topAnchor: NSLayoutYAxisAnchor,

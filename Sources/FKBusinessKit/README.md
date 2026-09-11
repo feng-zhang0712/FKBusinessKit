@@ -13,11 +13,15 @@ Legacy **BusinessKit** infrastructure (version, analytics, i18n, lifecycle, deep
 | Path | Role |
 |------|------|
 | `FKBusinessKit.swift` | Package module marker; re-exports FKCoreKit + FKUIKit |
+| `Resources/Assets.xcassets` | Shared template icons (`fk_*`) for CommentKit and future components |
+| `Resources/FKBusinessKitIcons.swift` | Public icon loader (`FKBusinessKitIcon` / `FKBusinessKitIcons`) |
 | `Components/Base/` | View controller bases and composition ([README](Components/Base/README.md)) |
 | `Components/TabBarFilter/` | Anchored filter strip ([README](Components/TabBarFilter/README.md)) |
 | `Components/CellKit/` | Business list cells + ListKit glue ([README](Components/CellKit/README.md)) |
+| `Components/CommentKit/` | Comment list UI kit — flat `replyTo`, actions, composer ([README](Components/CommentKit/README.md)) |
 | `docs/FKWidgets-Integration_DESIGN.md` | FKUIKit Widgets 组合用法设计片段（中文） |
 | `docs/FKCellKit_DESIGN.md` | CellKit 设计需求文档（中文） |
+| `docs/FKCommentKit_DESIGN.md` | CommentKit design & implementation guide (English) |
 | `README.md` | This file (excluded from the compile target) |
 
 Recommended layout for new work (match FKUIKit conventions when adding UI):
