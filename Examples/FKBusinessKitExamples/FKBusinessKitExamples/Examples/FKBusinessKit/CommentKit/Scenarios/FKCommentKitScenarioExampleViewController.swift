@@ -86,11 +86,11 @@ final class FKCommentKitScenarioExampleViewController: FKCommentListViewControll
       return .configuration(for: .compact)
     case .compactMetaComposer:
       var configuration = FKCommentKitConfiguration.configuration(for: .compact)
-      configuration.row.showsMetaReplyButton = true
+      configuration.row.showsMetaReplyButton = false
+      configuration.composer.showsReplyTargetBanner = false
       configuration.composer.showsSendButton = true
-      configuration.composer.showsReplyTargetBanner = true
       configuration.composer.usesCapsuleInput = true
-      configuration.strings.composerPlaceholder = "Meta Reply + reply banner + Send…"
+      configuration.strings.composerPlaceholder = "Meta Reply off · reply banner off…"
       return configuration
     default:
       break

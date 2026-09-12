@@ -16,7 +16,9 @@ public protocol FKCommentListDataSource: AnyObject {
     completion: @escaping @MainActor (Result<FKCommentListPage, Error>) -> Void
   )
 
-  /// Loads reply rows for a parent comment (flat `depth == 1` items).
+  /// Loads reply rows for a parent comment (flat list; typically `depth >= 1`).
+  ///
+  /// Visual indent is clamped by ``FKCommentRowCellConfiguration/maxDepth``; deeper logical floors are allowed.
   func commentListLoadReplies(
     parentId: String,
     completion: @escaping @MainActor (Result<[FKCommentItem], Error>) -> Void
@@ -101,6 +103,12 @@ public protocol FKCommentListDelegate: AnyObject {
     error: Error?
   )
 
+  /// Called after the contiguous reply subtree under `parentId` was collapsed.
+  func commentList(
+    _ controller: FKCommentListViewController,
+    didCollapseRepliesFor parentId: String
+  )
+
   /// Called after a successful submit; the new item is already in the list when possible.
   func commentList(
     _ controller: FKCommentListViewController,
@@ -171,6 +179,11 @@ public extension FKCommentListDelegate {
     didExpandRepliesFor parentId: String,
     inserted: [FKCommentItem],
     error: Error?
+  ) {}
+
+  func commentList(
+    _ controller: FKCommentListViewController,
+    didCollapseRepliesFor parentId: String
   ) {}
 
   func commentList(

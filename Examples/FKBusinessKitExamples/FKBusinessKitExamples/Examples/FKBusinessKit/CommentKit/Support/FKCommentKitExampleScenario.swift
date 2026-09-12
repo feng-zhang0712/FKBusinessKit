@@ -108,7 +108,7 @@ enum FKCommentKitExampleScenario: CaseIterable {
     case .compactInteractions:
       return "Row-tap reply, expand replies, avatar/author/long-press callbacks under compact."
     case .compactMetaComposer:
-      return "Toggle showsMetaReplyButton / showsReplyTargetBanner / send chrome."
+      return "showsMetaReplyButton and showsReplyTargetBanner off (row-tap reply still works)."
     case .compactListKitRow:
       return "FKCommentCompactRowCell registered on Diffable ListKit (like + tap feedback)."
     }

@@ -56,11 +56,11 @@ public enum FKCommentCompactDefaults {
       avatarSize: .s,
       indentWidth: 42,
       maxDepth: 1,
-      // Match ``standard`` Dynamic Type styles for author / time / body / reply-to / expand.
+      // Author ▸ reply-to share the same size; time / body / expand follow compact density.
       authorTextStyle: .subheadline,
       timestampTextStyle: .caption2,
       bodyTextStyle: .body,
-      replyToTextStyle: .caption1,
+      replyToTextStyle: .subheadline,
       expandTextStyle: .footnote,
       bodyMaxLines: 8,
       usesExpandableBody: true,

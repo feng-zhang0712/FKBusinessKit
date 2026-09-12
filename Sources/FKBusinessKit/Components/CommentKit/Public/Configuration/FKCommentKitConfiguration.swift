@@ -15,7 +15,7 @@ public struct FKCommentKitStrings: Equatable, Sendable {
   public var replyToFormat: String
   public var viewRepliesFormat: String
   public var hideReplies: String
-  /// Shown in place of ``viewRepliesFormat`` while nested replies load.
+  /// Accessibility label used while nested replies load (visual title stays stable to avoid row height jitter).
   public var loadingReplies: String
   public var cancelReply: String
   /// Cancel title for action sheets (more menu).
@@ -356,7 +356,9 @@ public struct FKCommentActionBarConfiguration: Equatable {
   public var iconPointSize: CGFloat
   /// Compact strip height when any action is visible.
   public var minimumHeight: CGFloat
-  /// When `true` (default), shows the like count beside the like icon when count &gt; 0 (or ``FKCommentItem/likeCountText`` is set).
+  /// When `true` (default), shows the like count beside the like icon when count &gt; 0.
+  /// Compact rail also shows the count when ``FKCommentItem/likeCountText`` is set; the standard
+  /// ``FKCommentActionBarView`` formats ``FKCommentItem/likeCount`` only.
   public var showsLikeCount: Bool
   /// When `true`, the reply control shows ``FKCommentKitStrings/reply`` beside the icon.
   public var showsReplyTitle: Bool
@@ -498,6 +500,9 @@ public struct FKCommentComposerConfiguration: Equatable {
   /// Corner radius for the capsule input well.
   public var capsuleCornerRadius: CGFloat
   /// When `false`, hides the Send control.
+  ///
+  /// ``FKCommentListViewController`` submits only via Send — keep this `true` when the list composer
+  /// should accept posts (standalone ``FKCommentComposerView`` hosts may provide another submit path).
   public var showsSendButton: Bool
   /// When `true` (default), shows the reply-target stripe (author name + Cancel) above the input.
   public var showsReplyTargetBanner: Bool

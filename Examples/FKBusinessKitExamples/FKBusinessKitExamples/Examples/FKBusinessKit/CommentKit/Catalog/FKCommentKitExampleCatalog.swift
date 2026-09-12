@@ -114,7 +114,6 @@ enum FKCommentKitExampleCatalog {
       title: "Building blocks & ListKit",
       rows: [
         row(.buildingBlocks),
-        row(.listKitRow),
       ]
     )
   }

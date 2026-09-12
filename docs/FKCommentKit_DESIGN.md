@@ -80,9 +80,10 @@ FKBusinessKit **comment UI kit** for open-source reuse: list presentation, row a
 ### 3.1 Semantics
 
 - **Top-level** comments: `depth == 0`, `parentId == nil` (or equal to the content root — App convention).
-- **Reply rows** in the same flat table: `depth == 1` (kit caps visual indent; deeper values clamp to max depth for layout only).
+- **Reply rows** in the same flat table: typically `depth >= 1` (kit caps visual indent via `maxDepth`; deeper values still expand).
 - Each item may carry `replyTo: FKCommentReplyTarget?` (id + display name) for “Replying to @Name” chrome.
 - Parent rows expose `replyCount` and optional expand affordance (“View N replies”).
+- Collapse removes the contiguous subtree and notifies `didCollapseRepliesFor` (distinct from expand).
 
 ### 3.2 Expand flow
 
@@ -231,7 +232,7 @@ When a product needs a skeleton that the current preset cannot express:
 2. **Name a preset** — e.g. `standard`, `compact`. Prefer a **small fixed set**, not one preset per app. Avoid brand names in public API.
 3. **Ship the preset under `Public/Presets/`** — enum case on ``FKCommentLayoutPreset``, concrete row template + defaults (e.g. `Presets/Compact/`).
 4. **Allow limited tokens on top** — sizes, tints, icons, strings, action visibility; document which knobs are valid for that preset.
-5. **Wire selection at the kit edge** — `commentConfiguration = .configuration(for: .compact)` or set ``FKCommentKitConfiguration/layoutPreset``. Examples must demonstrate each preset in a dedicated **Layout presets** group.
+5. **Wire selection at the kit edge** — Prefer `commentConfiguration = .configuration(for: .compact)` (or `FKCommentCompactDefaults.makeConfiguration()`). Setting `layoutPreset` alone only swaps the row cell class. Examples must demonstrate each preset in a dedicated **Layout presets** group.
 6. **Do not** grow the default cell into a universal assembler to avoid adding a preset.
 
 ### 7.4 Current presets

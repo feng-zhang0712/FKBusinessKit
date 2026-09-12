@@ -1,7 +1,8 @@
 import UIKit
 import FKUIKit
 
-/// Comment list screen hosting a table of ``FKCommentRowCell`` rows and a bottom ``FKCommentComposerView``.
+/// Comment list screen hosting preset row cells (``FKCommentRowCell`` / ``FKCommentCompactRowCell``)
+/// and a bottom ``FKCommentComposerView``.
 ///
 /// Wire ``commentDataSource`` and optionally ``commentDelegate``. The controller never performs networking itself.
 @MainActor
@@ -122,6 +123,8 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
     guard !isLoadingInitial else { return }
     isLoadingInitial = true
     let isRefresh = !comments.isEmpty
+    pendingLikeRollbacks.removeAll(keepingCapacity: false)
+    isLoadingRepliesFor.removeAll(keepingCapacity: false)
     beginListLoadIfNeeded(isRefresh: isRefresh, currentItemCount: comments.count)
     commentDataSource.commentListLoadInitial { [weak self] result in
       guard let self else { return }
@@ -210,11 +213,14 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
   public func toggleLike(for item: FKCommentItem) {
     let previousIsLiked = item.isLiked
     let previousLikeCount = item.likeCount
-    pendingLikeRollbacks[item.id] = (
-      isLiked: previousIsLiked,
-      likeCount: previousLikeCount,
-      likeCountText: item.likeCountText
-    )
+    // Keep the first pending snapshot so rapid re-taps do not lose the pre-toggle ``likeCountText``.
+    if pendingLikeRollbacks[item.id] == nil {
+      pendingLikeRollbacks[item.id] = (
+        isLiked: previousIsLiked,
+        likeCount: previousLikeCount,
+        likeCountText: item.likeCountText
+      )
+    }
     let updated = FKCommentLikeOptimisticController.toggled(item)
     comments = FKCommentLikeOptimisticController.replacing(updated, in: comments)
     reloadRow(id: updated.id, preferLikeOnly: true)
@@ -267,9 +273,7 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
     } else if !wasEditing {
       scrollToComment(id: item.id, at: .bottom, animated: true, highlight: false)
     }
-    if wasEditing {
-      // Keyboard already up: `alignContentRect` applied (and animated) above.
-    } else {
+    if !wasEditing {
       DispatchQueue.main.async { [weak self] in
         self?.composerView.focus()
       }
@@ -349,11 +353,8 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
   }
 
   public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    // Row-tap reply is handled by cell ``onRowTap`` (avoids double ``beginReply`` with the content gesture).
     tableView.deselectRow(at: indexPath, animated: false)
-    guard !isShowingSkeletonPlaceholders else { return }
-    guard commentConfiguration.beginsReplyOnRowTap else { return }
-    guard comments.indices.contains(indexPath.row) else { return }
-    beginReply(to: comments[indexPath.row])
   }
 
   // MARK: - Private
@@ -639,7 +640,7 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
         }
         tableView.reloadRows(at: [IndexPath(row: parentIndex, section: 0)], with: .none)
       }
-      commentDelegate?.commentList(self, didExpandRepliesFor: item.id, inserted: [], error: nil)
+      commentDelegate?.commentList(self, didCollapseRepliesFor: item.id)
       return
     }
 

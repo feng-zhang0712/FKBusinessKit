@@ -336,6 +336,7 @@ public final class FKCommentRowCell: FKBaseTableViewCell, FKListTableCellConfigu
     actionBar.prepareForReuse()
     expandSpinner.stopAnimating()
     expandButton.isEnabled = true
+    expandButton.accessibilityLabel = nil
     expandRow.isHidden = true
     expandSpinnerSlot.isHidden = true
     releaseTimestampLabel()
@@ -472,6 +473,9 @@ public final class FKCommentRowCell: FKBaseTableViewCell, FKListTableCellConfigu
     expandButton.isEnabled = !isExpandLoading
     if !isExpandLoading {
       updateExpandButtonTitle()
+      expandButton.accessibilityLabel = nil
+    } else {
+      expandButton.accessibilityLabel = strings.loadingReplies
     }
     let wasHidden = expandSpinnerSlot.isHidden
     UIView.performWithoutAnimation {

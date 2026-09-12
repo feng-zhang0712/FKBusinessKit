@@ -361,6 +361,7 @@ public final class FKCommentCompactRowCell: FKBaseTableViewCell, FKListTableCell
     actionRail.prepareForReuse()
     expandSpinner.stopAnimating()
     expandButton.isEnabled = true
+    expandButton.accessibilityLabel = nil
     expandRow.isHidden = true
     expandSpinnerSlot.isHidden = true
     releaseBodyLabel()
@@ -525,6 +526,9 @@ public final class FKCommentCompactRowCell: FKBaseTableViewCell, FKListTableCell
     // Do not rebuild the title while loading — text length changes jitter the parent row.
     if !isExpandLoading {
       updateExpandButtonTitle()
+      expandButton.accessibilityLabel = nil
+    } else {
+      expandButton.accessibilityLabel = strings.loadingReplies
     }
     let wasHidden = expandSpinnerSlot.isHidden
     UIView.performWithoutAnimation {
