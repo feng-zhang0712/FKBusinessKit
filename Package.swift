@@ -2,9 +2,9 @@
 
 import PackageDescription
 
-/// Lowest FKKit tag this package compiles against (ListKit v4, Widgets, TabBarFilter sheet APIs).
+/// Lowest FKKit tag this package compiles against (ListKit v4, Widgets, TabBarFilter sheet APIs, Keyboard).
 /// Raise when adopting APIs from a newer FKKit release; keep `FKBusinessKit.podspec` FKCoreKit/FKUIKit deps in sync.
-private let fkKitMinimumVersion = Version(0, 73, 0)
+private let fkKitMinimumVersion = Version(0, 78, 2)
 
 let package = Package(
   name: "FKBusinessKit",

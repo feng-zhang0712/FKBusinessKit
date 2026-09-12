@@ -1,4 +1,4 @@
-import UIKit
+import Foundation
 
 /// Internal helpers for flattening reply insertion under a parent row.
 enum FKCommentListMutation {

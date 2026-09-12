@@ -28,10 +28,17 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
   private var hasMorePages: Bool = false
   private var isLoadingInitial: Bool = false
   private var isLoadingRepliesFor: Set<String> = []
+  /// Snapshots captured at optimistic like time so ``rollbackLike`` can restore ``likeCountText``.
+  private var pendingLikeRollbacks: [String: (isLiked: Bool, likeCount: Int, likeCountText: String?)] = [:]
   private let standardCellReuseIdentifier = "FKCommentRowCell"
   private let compactCellReuseIdentifier = "FKCommentCompactRowCell"
   private var tableBottomToComposerConstraint: NSLayoutConstraint?
   private var tableBottomToKeyboardConstraint: NSLayoutConstraint?
+  /// Aligns the reply target row above the composer when the keyboard is visible (FKUIKit Keyboard).
+  private var replyKeyboardFocusScroller: FKKeyboardFocusScroller?
+  /// Runs after ``FKKeyboardFocusScroller`` on keyboard frame changes to pin row→composer
+  /// (corrects load-more `contentInset.bottom` baked into older Keyboard geometry).
+  private var replyKeyboardPinObservation: NSObjectProtocol?
 
   public override init(style: UITableView.Style = .plain) {
     super.init(style: style)
@@ -65,9 +72,21 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
     }
     composerView.onCancelReply = { [weak self] in
       self?.composerView.replyTarget = nil
+      self?.replyKeyboardFocusScroller?.clearAlignmentTarget()
     }
 
     applyCommentConfiguration()
+  }
+
+  open override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    syncReplyKeyboardFocusScroller(startIfNeeded: true)
+  }
+
+  open override func viewWillDisappear(_ animated: Bool) {
+    removeReplyKeyboardPinCorrection()
+    replyKeyboardFocusScroller?.stop()
+    super.viewWillDisappear(animated)
   }
 
   open override func setupConstraints() {
@@ -84,8 +103,9 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
 
       composerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       composerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-      composerView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
     ])
+    // Match FKUIKit Keyboard “Align cell to keyboard”: pin composer to keyboardLayoutGuide.
+    _ = FKKeyboardLayout.pinBottom(of: composerView, toKeyboardTopOf: view)
     applyComposerVisibilityConstraints()
   }
 
@@ -146,29 +166,55 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
       }
     }
     tableView.reloadData()
+    syncListPresentationAfterMutation()
+  }
+
+  /// Inserts a comment into the flat list (e.g. realtime push or external create).
+  ///
+  /// Uses the same placement rules as a successful composer submit (top-level append, or under the
+  /// reply parent). Does not modify the composer.
+  ///
+  /// - Parameters:
+  ///   - item: Comment to insert (or replace when the id already exists).
+  ///   - scrollToInserted: When `true`, scrolls the inserted row into view.
+  ///   - highlight: When `true` and scrolling, briefly flashes the row background.
+  public func insertComment(
+    _ item: FKCommentItem,
+    scrollToInserted: Bool = false,
+    highlight: Bool = false
+  ) {
+    comments = FKCommentListMutation.insertingSubmitted(item, into: comments)
+    tableView.reloadData()
+    syncListPresentationAfterMutation()
+    if scrollToInserted {
+      scrollToComment(id: item.id, animated: true, highlight: highlight)
+    }
   }
 
   /// Updates a single comment in place (e.g. after a successful server sync).
   public func updateComment(_ item: FKCommentItem) {
+    pendingLikeRollbacks.removeValue(forKey: item.id)
     comments = FKCommentListMutation.replacing(item, in: comments)
     reloadRow(id: item.id, preferLikeOnly: false)
   }
 
   /// Removes a comment and its expanded children from the list (call after delete succeeds).
   public func removeComment(id: String) {
+    pendingLikeRollbacks.removeValue(forKey: id)
     comments = FKCommentListMutation.removing(id: id, from: comments)
     tableView.reloadData()
-    if comments.isEmpty {
-      finishListLoadPresentation(outcome: .empty, isRefresh: false) { [weak self] _ in
-        self?.reloadComments()
-      }
-    }
+    syncListPresentationAfterMutation()
   }
 
   /// Applies an optimistic like toggle and notifies the delegate.
   public func toggleLike(for item: FKCommentItem) {
     let previousIsLiked = item.isLiked
     let previousLikeCount = item.likeCount
+    pendingLikeRollbacks[item.id] = (
+      isLiked: previousIsLiked,
+      likeCount: previousLikeCount,
+      likeCountText: item.likeCountText
+    )
     let updated = FKCommentLikeOptimisticController.toggled(item)
     comments = FKCommentLikeOptimisticController.replacing(updated, in: comments)
     reloadRow(id: updated.id, preferLikeOnly: true)
@@ -181,33 +227,77 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
   }
 
   /// Rolls back like state after a failed network call.
+  ///
+  /// When `previousLikeCountText` is omitted, restores any ``FKCommentItem/likeCountText`` snapshot
+  /// captured by ``toggleLike(for:)``.
   public func rollbackLike(
     commentId: String,
     previousIsLiked: Bool,
-    previousLikeCount: Int
+    previousLikeCount: Int,
+    previousLikeCountText: String? = nil
   ) {
     guard let index = comments.firstIndex(where: { $0.id == commentId }) else { return }
+    let snapshot = pendingLikeRollbacks.removeValue(forKey: commentId)
+    let restoredText = previousLikeCountText ?? snapshot?.likeCountText
     let rolled = FKCommentLikeOptimisticController.rolledBack(
       comments[index],
       previousIsLiked: previousIsLiked,
-      previousLikeCount: previousLikeCount
+      previousLikeCount: previousLikeCount,
+      previousLikeCountText: restoredText
     )
     comments[index] = rolled
     reloadRow(id: commentId, preferLikeOnly: true)
   }
 
   /// Sets the composer reply target and focuses input.
+  ///
+  /// When ``FKCommentKitConfiguration/alignsReplyTargetToKeyboard`` is `true` (default), uses
+  /// FKUIKit ``FKKeyboardFocusScroller/alignContentRect(_:toKeyboardUsing:additionalBottomInset:)``
+  /// so the target row’s bottom meets the composer top (Keyboard “Align cell to keyboard”).
   public func beginReply(to item: FKCommentItem) {
     guard commentConfiguration.showsComposer else {
       commentDelegate?.commentList(self, didTapReply: item)
       return
     }
+    let wasEditing = isComposerEditing
     composerView.replyTarget = FKCommentReplyTarget(id: item.id, displayName: item.authorName)
-    // Defer until after reply-banner layout so `becomeFirstResponder` reliably shows the keyboard.
-    DispatchQueue.main.async { [weak self] in
-      self?.composerView.focus()
+    view.layoutIfNeeded()
+    if commentConfiguration.alignsReplyTargetToKeyboard {
+      alignReplyTargetRowToKeyboard(commentId: item.id)
+    } else if !wasEditing {
+      scrollToComment(id: item.id, at: .bottom, animated: true, highlight: false)
+    }
+    if wasEditing {
+      // Keyboard already up: `alignContentRect` applied (and animated) above.
+    } else {
+      DispatchQueue.main.async { [weak self] in
+        self?.composerView.focus()
+      }
     }
     commentDelegate?.commentList(self, didTapReply: item)
+  }
+
+  /// Scrolls so the comment with `id` is visible.
+  ///
+  /// - Parameters:
+  ///   - id: Target comment id.
+  ///   - position: Table scroll position (defaults to `.bottom`).
+  ///   - animated: Whether to animate scrolling.
+  ///   - highlight: When `true`, briefly flashes the row to draw attention (deep link / find-in-list).
+  public func scrollToComment(
+    id: String,
+    at position: UITableView.ScrollPosition = .bottom,
+    animated: Bool = true,
+    highlight: Bool = false
+  ) {
+    guard let index = comments.firstIndex(where: { $0.id == id }) else { return }
+    let indexPath = IndexPath(row: index, section: 0)
+    tableView.scrollToRow(at: indexPath, at: position, animated: animated)
+    guard highlight else { return }
+    let delay: TimeInterval = animated ? 0.35 : 0
+    DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+      self?.flashHighlight(at: indexPath)
+    }
   }
 
   // MARK: - Refresh
@@ -394,6 +484,7 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
       tableView.separatorInset = UIEdgeInsets(top: 0, left: 56, bottom: 0, right: 0)
     }
     applyComposerVisibilityConstraints()
+    syncReplyKeyboardFocusScroller(startIfNeeded: isViewAppeared)
     tableView.reloadData()
   }
 
@@ -401,6 +492,114 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
     let showsComposer = commentConfiguration.showsComposer
     tableBottomToComposerConstraint?.isActive = showsComposer
     tableBottomToKeyboardConstraint?.isActive = !showsComposer
+  }
+
+  /// Mirrors FKUIKit Keyboard “Align cell to keyboard” example.
+  private func syncReplyKeyboardFocusScroller(startIfNeeded: Bool) {
+    let shouldUse =
+      commentConfiguration.alignsReplyTargetToKeyboard && commentConfiguration.showsComposer
+    guard shouldUse else {
+      removeReplyKeyboardPinCorrection()
+      replyKeyboardFocusScroller?.stop()
+      replyKeyboardFocusScroller = nil
+      return
+    }
+    if replyKeyboardFocusScroller == nil {
+      replyKeyboardFocusScroller = FKKeyboardFocusScroller(
+        rootView: view,
+        scrollView: tableView,
+        configuration: .init(
+          additionalTopInset: 0,
+          keyboardDistanceFromFocusedView: 0,
+          appliesKeyboardBottomInset: false
+        )
+      )
+    } else {
+      replyKeyboardFocusScroller?.rootView = view
+      replyKeyboardFocusScroller?.scrollView = tableView
+    }
+    guard startIfNeeded else { return }
+    replyKeyboardFocusScroller?.start()
+    // Register after the scroller so this runs in the same keyboard notification pass.
+    installReplyKeyboardPinCorrectionIfNeeded()
+  }
+
+  private func alignReplyTargetRowToKeyboard(commentId: String) {
+    syncReplyKeyboardFocusScroller(startIfNeeded: isViewAppeared)
+    guard let index = comments.firstIndex(where: { $0.id == commentId }) else { return }
+    // Banner / indent layout must be settled before `rectForRow` (critical for nested replies).
+    view.layoutIfNeeded()
+    tableView.layoutIfNeeded()
+    let rowRect = tableView.rectForRow(at: IndexPath(row: index, section: 0))
+    replyKeyboardFocusScroller?.alignContentRect(
+      rowRect,
+      toKeyboardUsing: nil,
+      additionalBottomInset: 0
+    )
+    // When the keyboard is already visible, also pin immediately (nested reply / retarget).
+    if isComposerEditing {
+      pinRowBottomToComposerTop(rowRect: rowRect)
+    }
+  }
+
+  private func installReplyKeyboardPinCorrectionIfNeeded() {
+    guard replyKeyboardPinObservation == nil else { return }
+    replyKeyboardPinObservation = NotificationCenter.default.addObserver(
+      forName: UIResponder.keyboardWillChangeFrameNotification,
+      object: nil,
+      queue: .main
+    ) { [weak self] _ in
+      MainActor.assumeIsolated {
+        self?.pinActiveReplyRowToComposerTopIfNeeded()
+      }
+    }
+  }
+
+  private func removeReplyKeyboardPinCorrection() {
+    if let replyKeyboardPinObservation {
+      NotificationCenter.default.removeObserver(replyKeyboardPinObservation)
+      self.replyKeyboardPinObservation = nil
+    }
+  }
+
+  private func pinActiveReplyRowToComposerTopIfNeeded() {
+    guard commentConfiguration.alignsReplyTargetToKeyboard,
+      let id = composerView.replyTarget?.id,
+      let index = comments.firstIndex(where: { $0.id == id })
+    else { return }
+    view.layoutIfNeeded()
+    let rowRect = tableView.rectForRow(at: IndexPath(row: index, section: 0))
+    pinRowBottomToComposerTop(rowRect: rowRect)
+  }
+
+  /// Pins `rowRect.maxY` to `tableView.bounds.maxY` (= composer top with current constraints).
+  ///
+  /// Ignores load-more `contentInset.bottom` so the cell sits flush on the edit bar, not above the
+  /// footer inset band.
+  private func pinRowBottomToComposerTop(rowRect: CGRect) {
+    let boundsHeight = tableView.bounds.height
+    guard boundsHeight > 1, rowRect.height > 0.5 else { return }
+    let idealOffsetY = rowRect.maxY - boundsHeight
+    let minOffsetY = -tableView.contentInset.top
+    let maxOffsetY = max(
+      minOffsetY,
+      tableView.contentSize.height + tableView.contentInset.bottom - boundsHeight
+    )
+    let targetOffsetY = min(max(idealOffsetY, minOffsetY), maxOffsetY)
+    guard abs(targetOffsetY - tableView.contentOffset.y) > 0.5 else { return }
+    tableView.contentOffset = CGPoint(x: tableView.contentOffset.x, y: targetOffsetY)
+  }
+
+  private var isComposerEditing: Bool {
+    Self.firstResponder(in: composerView) != nil
+  }
+
+  private static func firstResponder(in view: UIView) -> UIView? {
+    if view.isFirstResponder { return view }
+    for subview in view.subviews {
+      if let found = firstResponder(in: subview) { return found }
+    }
+    return nil
   }
 
   private func handleSend(text: String) {
@@ -417,15 +616,11 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
       case .success(let item):
         self.comments = FKCommentListMutation.insertingSubmitted(item, into: self.comments)
         self.composerView.resetAll()
+        self.replyKeyboardFocusScroller?.clearAlignmentTarget()
         self.tableView.reloadData()
-        self.scrollToComment(id: item.id, animated: true)
+        self.syncListPresentationAfterMutation()
+        self.scrollToComment(id: item.id, animated: true, highlight: false)
         self.commentDelegate?.commentList(self, didSubmit: item)
-        if !self.comments.isEmpty {
-          self.finishListLoadPresentation(
-            outcome: .content(itemCount: self.comments.count),
-            isRefresh: false
-          )
-        }
       case .failure(let error):
         self.commentDelegate?.commentList(self, didFailSubmit: request, error: error)
       }
@@ -598,10 +793,31 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
     tableView.reloadRows(at: [indexPath], with: .none)
   }
 
-  private func scrollToComment(id: String, animated: Bool) {
-    guard let index = comments.firstIndex(where: { $0.id == id }) else { return }
-    let indexPath = IndexPath(row: index, section: 0)
-    tableView.scrollToRow(at: indexPath, at: .bottom, animated: animated)
+  private func syncListPresentationAfterMutation() {
+    if comments.isEmpty {
+      finishListLoadPresentation(outcome: .empty, isRefresh: false) { [weak self] _ in
+        self?.reloadComments()
+      }
+    } else {
+      finishListLoadPresentation(
+        outcome: .content(itemCount: comments.count),
+        isRefresh: false
+      )
+    }
+  }
+
+  private func flashHighlight(at indexPath: IndexPath) {
+    guard let cell = tableView.cellForRow(at: indexPath) else { return }
+    let target = cell.contentView
+    let original = target.backgroundColor
+    let flash = UIColor.systemYellow.withAlphaComponent(0.28)
+    UIView.animate(withDuration: 0.18, animations: {
+      target.backgroundColor = flash
+    }, completion: { _ in
+      UIView.animate(withDuration: 0.5, delay: 0.4, options: [.curveEaseOut], animations: {
+        target.backgroundColor = original
+      })
+    })
   }
 }
 

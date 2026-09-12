@@ -373,7 +373,7 @@ enum FKCommentKitExampleSampleData {
     ]
   }
 
-  /// Compact-preset sample: meta timestamp, large like counts, reply-to in author line.
+  /// Compact-preset sample: author-row timestamp, large like counts, reply-to in author line.
   static var compactTopLevel: [FKCommentItem] {
     [
       FKCommentItem(

@@ -41,7 +41,7 @@ FKBusinessKit **comment UI kit** for open-source reuse: list presentation, row a
 | Thread model | **Flat list + `replyTo`** (content-app style) |
 | Completeness | **P0 + P1 in v1** to minimize long-term forking |
 | Host package | **FKBusinessKit** (not FKKit) |
-| Examples / tests (this delivery) | **Deferred** |
+| Examples / tests (this delivery) | **Examples shipped** (CommentKit hub); unit/UI tests still deferred |
 
 ---
 
@@ -64,14 +64,14 @@ FKBusinessKit **comment UI kit** for open-source reuse: list presentation, row a
 | Product review ratings UI | Use `FKReviewListCell` |
 | Reddit-style deep nested tree as primary API | Maintenance cost; not the locked model |
 | Replacing CellKit `FKCommentThreadCell` | Keep as display-only primitive |
-| Unit / UI tests and Examples scenes (this delivery) | Explicitly deferred |
+| Unit / UI tests (this delivery) | Explicitly deferred |
 
 ### 2.3 Success criteria (v1)
 
-- [ ] `docs/FKCommentKit_DESIGN.md` and `Components/CommentKit/README.md` exist.
-- [ ] Public models, protocols, configuration, views, list controller, optimistic like helper compile under `SWIFT_STRICT_CONCURRENCY=complete`.
-- [ ] App can drive load / like / reply / expand / submit without subclassing networking into the kit.
-- [ ] `FKCommentThreadCell` and `FKReviewListCell` remain untouched in behavior.
+- [x] `docs/FKCommentKit_DESIGN.md` and `Components/CommentKit/README.md` exist.
+- [x] Public models, protocols, configuration, views, list controller, optimistic like helper compile under `SWIFT_STRICT_CONCURRENCY=complete`.
+- [x] App can drive load / like / reply / expand / submit without subclassing networking into the kit.
+- [x] `FKCommentThreadCell` and `FKReviewListCell` remain untouched in behavior.
 
 ---
 
@@ -146,8 +146,8 @@ Completion handlers are `@MainActor` / `Sendable`-safe where required. **No** de
 |------|------|
 | `FKCommentActionBarView` | Like / Reply / More |
 | `FKCommentComposerView` | Input + send + reply-target banner |
-| `FKCommentRowCell` | Interactive comment row (`FKCellKitTableCell`) |
-| `FKCommentListViewController` | Table + composer + refresh/load-more wiring; `updateComment` / `removeComment` |
+| `FKCommentRowCell` | Interactive comment row (``FKBaseTableViewCell``) |
+| `FKCommentListViewController` | Table + composer + refresh/load-more; `updateComment` / `removeComment` / `insertComment` / `replaceComments` / `scrollToComment` |
 | `FKCommentLikeOptimisticController` | Toggle like + rollback helper |
 | `FKCommentListRegistration` | Optional ListKit registration for the row cell |
 
@@ -158,6 +158,9 @@ Additional v1 hardening (additive, non-breaking):
 - Composer `maxContentHeight` with internal scrolling
 - Always surface a just-submitted reply under its parent
 - Deduped load-more / empty more-menu guard / action-sheet `cancel` string
+- Custom / disableable more menu (`presentsDefaultMoreMenu`, `additionalMoreActions`, `didTapMore`)
+- Optimistic like clears stale `likeCountText`; public scroll + optional highlight
+- Compact meta stripe: like · Reply · more with configurable visibility / icons; timestamp trailing on the author row (Standard-style)
 
 ---
 
@@ -236,7 +239,7 @@ When a product needs a skeleton that the current preset cannot express:
 | Preset | Row template | Notes |
 |--------|--------------|-------|
 | ``standard`` | ``FKCommentRowCell`` | Feed-style: avatar, author + timestamp header, body, bottom action stripe |
-| ``compact`` | ``FKCommentCompactRowCell`` | Denser social-style chrome: author → body → meta (like · Reply · more · time), author ▸ reply-to on nested rows, capsule composer + Send / optional reply banner. Not tied to a product category. |
+| ``compact`` | ``FKCommentCompactRowCell`` | Denser social-style chrome: author + trailing time → body → meta (like · Reply · more), author ▸ reply-to on nested rows, capsule composer + Send / optional reply banner. Not tied to a product category. |
 
 - **Configuration:** tokens and flags within the active preset; see ``FKCommentKitConfiguration`` and nested row / action-bar / composer configs (text styles, optional font weights, colors, spacings, action / chevron icons).
 - **Factory:** ``FKCommentKitConfiguration/configuration(for:)`` or ``FKCommentCompactDefaults/makeConfiguration()``.
@@ -266,10 +269,10 @@ When a product needs a skeleton that the current preset cannot express:
 
 | Phase | Scope |
 |-------|--------|
-| **v1 (this work)** | Design doc + CommentKit module |
-| **v1.1** | FKBusinessKitExamples CommentKit hub (grouped scenarios) |
-| **v1.2** | ``compact`` layout preset + Layout presets Examples group |
-| **Later** | Additional layout presets when product skeletons diverge; media attachments in composer; sort tabs if multi-app demand is proven |
+| **v1** | Design doc + CommentKit module (standard preset) |
+| **v1.1** | FKBusinessKitExamples CommentKit hub (grouped scenarios) — **shipped** |
+| **v1.2** | ``compact`` layout preset + Layout presets Examples group — **shipped** |
+| **Later** | Additional layout presets when product skeletons diverge; media attachments in composer; sort tabs if multi-app demand is proven; unit/UI tests |
 
 ---
 
@@ -280,3 +283,5 @@ When a product needs a skeleton that the current preset cannot express:
 | 2026-09-11 | Initial accepted design: UI kit, flat + replyTo, P0+P1 v1 |
 | 2026-09-11 | §7 Layout presets vs configuration (normative guidance for future UI) |
 | 2026-09-11 | §7.4 ``compact`` preset shipped under `Public/Presets/Compact/` (renamed from working name `shortVideo` — layout-agnostic, not product-category-bound) |
+| 2026-09-12 | Wrap-up: Examples + compact marked shipped; success criteria checked; docs aligned with ``FKBaseTableViewCell`` and compact meta order |
+| 2026-09-12 | Reply → keyboard: ``alignsReplyTargetToKeyboard`` (default on) via FKUIKit ``FKKeyboardFocusScroller`` / `alignContentRect` |

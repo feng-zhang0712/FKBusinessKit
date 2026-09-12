@@ -1,4 +1,4 @@
-import UIKit
+import Foundation
 
 /// Named row / list layout skeletons for CommentKit.
 ///
@@ -7,7 +7,7 @@ import UIKit
 public enum FKCommentLayoutPreset: String, Equatable, Sendable, CaseIterable {
   /// Feed-style row: avatar, author + timestamp header, body, bottom action stripe (like / reply / more).
   case standard
-  /// Compact social-style row: author → body → meta (time · Reply · like),
+  /// Compact social-style row: author + trailing time → body → meta (like · Reply · more),
   /// indented replies with author ▸ reply-to composition. Product-agnostic (feeds, detail pages, sheets, …).
   case compact
 }

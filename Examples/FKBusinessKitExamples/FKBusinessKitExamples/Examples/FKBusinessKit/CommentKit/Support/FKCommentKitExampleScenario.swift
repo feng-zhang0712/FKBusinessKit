@@ -100,7 +100,7 @@ enum FKCommentKitExampleScenario: CaseIterable {
     case .layoutPresetStandard:
       return "configuration(for: .standard) — feed-style skeleton."
     case .layoutPresetCompact:
-      return "configuration(for: .compact) — meta time · Reply · like, capsule composer."
+      return "configuration(for: .compact) — author + trailing time, meta like · Reply · more, capsule composer."
     case .longListStandard:
       return "200 mixed-length Standard rows for scroll jank checks (delay 0)."
     case .longListCompact:

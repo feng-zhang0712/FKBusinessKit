@@ -233,13 +233,6 @@ extension FKCommentKitScenarioExampleViewController: FKCommentListDelegate {
 
   func commentList(
     _ controller: FKCommentListViewController,
-    didTapComment item: FKCommentItem
-  ) {
-    showToast("Comment: \(item.id)")
-  }
-
-  func commentList(
-    _ controller: FKCommentListViewController,
     didLongPressComment item: FKCommentItem
   ) {
     showToast("Long press: \(item.id)")

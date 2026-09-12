@@ -102,8 +102,9 @@ public final class FKCommentCompactActionRailView: UIView {
     NSLayoutConstraint.activate([
       stack.topAnchor.constraint(equalTo: topAnchor),
       stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-      stack.trailingAnchor.constraint(equalTo: trailingAnchor),
       stack.bottomAnchor.constraint(equalTo: bottomAnchor),
+      // Do not pin trailing — buttons stay leading-packed when the rail is given extra width.
+      stack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor),
     ])
 
     applyConfiguration()

@@ -19,6 +19,6 @@ Pod::Spec.new do |s|
   s.resource_bundles = {
     'FKBusinessKit' => ['Sources/FKBusinessKit/Resources/Assets.xcassets']
   }
-  s.dependency 'FKCoreKit', '~> 0.73.0'
-  s.dependency 'FKUIKit', '~> 0.73.0'
+  s.dependency 'FKCoreKit', '~> 0.78.2'
+  s.dependency 'FKUIKit', '~> 0.78.2'
 end

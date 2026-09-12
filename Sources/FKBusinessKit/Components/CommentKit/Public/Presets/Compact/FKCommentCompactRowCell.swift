@@ -1,7 +1,7 @@
 import UIKit
 import FKUIKit
 
-/// Compact layout skeleton for CommentKit: author → body → meta (like · Reply · more · time), expand row.
+/// Compact layout skeleton for CommentKit: author + trailing time → body → meta (like · Reply · more), expand row.
 @MainActor
 public final class FKCommentCompactRowCell: FKBaseTableViewCell, FKListTableCellConfigurable {
   public typealias Item = FKCommentItem
@@ -184,18 +184,18 @@ public final class FKCommentCompactRowCell: FKBaseTableViewCell, FKListTableCell
   }
 
   /// Applies like fields without rebuilding the whole row.
+  ///
+  /// Pass `likeCountText: nil` to clear a display override and fall back to formatting `likeCount`.
   public func applyLikeState(isLiked: Bool, likeCount: Int, likeCountText: String? = nil) {
     guard var boundItem else { return }
     boundItem.isLiked = isLiked
     boundItem.likeCount = max(0, likeCount)
-    if let likeCountText {
-      boundItem.likeCountText = likeCountText
-    }
+    boundItem.likeCountText = likeCountText
     self.boundItem = boundItem
     actionRail.apply(
       isLiked: isLiked,
       likeCount: likeCount,
-      likeCountText: boundItem.likeCountText
+      likeCountText: likeCountText
     )
   }
 
@@ -258,6 +258,7 @@ public final class FKCommentCompactRowCell: FKBaseTableViewCell, FKListTableCell
     metaLabel.textAlignment = .right
     metaLabel.setContentHuggingPriority(.required, for: .horizontal)
     metaLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+    authorRow.addArrangedSubview(metaLabel)
 
     actionRail.setContentHuggingPriority(.required, for: .horizontal)
     actionRail.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -265,12 +266,11 @@ public final class FKCommentCompactRowCell: FKBaseTableViewCell, FKListTableCell
     metaStack.axis = .horizontal
     metaStack.alignment = .center
     metaStack.spacing = rowConfiguration.metaInlineSpacing
-    // like · reply · more (leading) · spacer · time (trailing)
+    // like · reply · more (leading) · spacer — keeps the rail left-aligned in the filled text column.
     metaStack.addArrangedSubview(actionRail)
     let metaSpacer = UIView()
     metaSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
     metaStack.addArrangedSubview(metaSpacer)
-    metaStack.addArrangedSubview(metaLabel)
 
     expandButton.contentHorizontalAlignment = .leading
     expandButton.addTarget(self, action: #selector(handleExpandTap), for: .touchUpInside)
@@ -557,8 +557,7 @@ public final class FKCommentCompactRowCell: FKBaseTableViewCell, FKListTableCell
 
   private func updateMetaStackVisibility() {
     let stripeEnabled = rowConfiguration.showsMetaStripe
-    let hasContent = !metaLabel.isHidden || actionRail.hasVisibleActions
-    metaStack.isHidden = !(stripeEnabled && hasContent)
+    metaStack.isHidden = !(stripeEnabled && actionRail.hasVisibleActions)
   }
 
   @discardableResult

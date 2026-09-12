@@ -97,6 +97,10 @@ public struct FKCommentKitConfiguration: Equatable {
   public var showsComposer: Bool
   /// When `true`, tapping a comment row (outside like / reply / more / author / expand controls) begins a reply.
   public var beginsReplyOnRowTap: Bool
+  /// When `true` (default), beginning a reply uses FKUIKit ``FKKeyboardFocusScroller`` /
+  /// `alignContentRect` so the target row’s bottom meets the composer top (Keyboard “Align cell
+  /// to keyboard”). Set `false` for plain ``UITableView/scrollToRow``.
+  public var alignsReplyTargetToKeyboard: Bool
   public var isPullToRefreshEnabled: Bool
   public var isLoadMoreEnabled: Bool
   /// Maximum reply rows kept under a parent when expanding (App may still return fewer).
@@ -120,6 +124,7 @@ public struct FKCommentKitConfiguration: Equatable {
     additionalMoreActions: [FKCommentCustomMoreAction] = [],
     showsComposer: Bool = true,
     beginsReplyOnRowTap: Bool = true,
+    alignsReplyTargetToKeyboard: Bool = true,
     isPullToRefreshEnabled: Bool = true,
     isLoadMoreEnabled: Bool = true,
     maxExpandedReplies: Int = 50,
@@ -139,6 +144,7 @@ public struct FKCommentKitConfiguration: Equatable {
     self.additionalMoreActions = additionalMoreActions
     self.showsComposer = showsComposer
     self.beginsReplyOnRowTap = beginsReplyOnRowTap
+    self.alignsReplyTargetToKeyboard = alignsReplyTargetToKeyboard
     self.isPullToRefreshEnabled = isPullToRefreshEnabled
     self.isLoadMoreEnabled = isLoadMoreEnabled
     self.maxExpandedReplies = max(1, maxExpandedReplies)
@@ -181,7 +187,7 @@ public struct FKCommentRowCellConfiguration: Equatable {
   public var contentRowSpacing: CGFloat
   /// Gap inside the author header / author▷reply-to row.
   public var headerInlineSpacing: CGFloat
-  /// Gap inside the compact meta row (time · Reply).
+  /// Gap inside the compact meta row (like · Reply · more).
   public var metaInlineSpacing: CGFloat
   /// Gap between expand spinner slot and Expand title.
   public var expandRowSpacing: CGFloat
@@ -206,9 +212,9 @@ public struct FKCommentRowCellConfiguration: Equatable {
   public var expandLessIcon: FKBusinessKitIcon
   /// Point size for ``replyToChevronIcon`` / expand chevrons.
   public var chevronIconPointSize: CGFloat
-  /// When `true` (default), compact rows show the meta stripe (like · reply · more · timestamp).
+  /// When `true` (default), compact rows show the meta stripe (like · reply · more).
   public var showsMetaStripe: Bool
-  /// When `true` (default), compact meta rows show the timestamp (also requires ``showsMetaStripe``).
+  /// When `true` (default), compact rows show the timestamp trailing on the author row (Standard-style).
   public var showsTimestamp: Bool
   /// When `true` (default), compact meta rows show the Reply control (also requires ``FKCommentKitConfiguration/showsReplyAction``).
   public var showsMetaReplyButton: Bool

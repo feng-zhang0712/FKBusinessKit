@@ -28,7 +28,7 @@ Components/CommentKit/
 | Preset | Skeleton |
 |--------|----------|
 | ``FKCommentLayoutPreset/standard`` | Avatar, author + timestamp header, body, bottom like / reply / more strip |
-| ``FKCommentLayoutPreset/compact`` | Author → body → meta (like · Reply · more · time), capsule composer |
+| ``FKCommentLayoutPreset/compact`` | Author + trailing time → body → meta (like · Reply · more), capsule composer |
 
 ```swift
 commentConfiguration = .configuration(for: .compact)
@@ -83,12 +83,17 @@ extension HostCommentsViewController: FKCommentListDataSource {
 - Action icons load from ``FKBusinessKitIcons`` / ``Assets.xcassets`` — not SF Symbols.
 - Do **not** merge with ``FKReviewListCell`` (product reviews).
 - After delete succeeds, call ``FKCommentListViewController/removeComment(id:)``.
+- External create / realtime insert: ``FKCommentListViewController/insertComment(_:scrollToInserted:highlight:)`` (same placement as submit).
+- Deep link / find-in-list: ``FKCommentListViewController/scrollToComment(id:at:animated:highlight:)``.
+- ``replaceComments`` / ``insertComment`` / ``removeComment`` keep Base empty↔content presentation in sync.
+- Optimistic like clears stale ``FKCommentItem/likeCountText``; ``rollbackLike`` restores the pre-toggle display text when available.
 - Read-only lists: set ``FKCommentKitConfiguration/showsComposer`` to `false`.
 - Row tap to reply: ``FKCommentKitConfiguration/beginsReplyOnRowTap`` (default `true`); disable when only the Reply button should start a reply.
+- Reply keyboard alignment (default on): ``FKCommentKitConfiguration/alignsReplyTargetToKeyboard`` uses FKUIKit ``FKKeyboardFocusScroller`` / `alignContentRect` so the target row’s bottom meets the composer top (Keyboard “Align cell to keyboard”). Set `false` for plain ``scrollToRow`` only.
 - Nested “View N replies” works on any row with ``FKCommentItem/replyCount`` (flat list + ``replyTo``); collapse removes the contiguous subtree.
 - Visual indent uses ``min(depth, maxDepth) × indentWidth`` — deeper logical floors still expand, but UI indent stops growing after ``FKCommentRowCellConfiguration/maxDepth`` (default `1`).
 - Optional ``FKCommentItem/likeCountText`` feeds compact like chrome when provided.
-- Compact meta stripe (leading like · reply · more, trailing timestamp): ``FKCommentRowCellConfiguration/showsMetaStripe``, ``showsTimestamp``, ``showsMetaReplyButton``; action visibility via ``FKCommentKitConfiguration/showsLikeAction`` / ``showsReplyAction`` / ``showsMoreAction``.
+- Compact meta stripe (leading like · reply · more): ``FKCommentRowCellConfiguration/showsMetaStripe``, ``showsMetaReplyButton``; trailing author-row timestamp via ``showsTimestamp``; action visibility via ``FKCommentKitConfiguration/showsLikeAction`` / ``showsReplyAction`` / ``showsMoreAction``.
 - Compact action icons: catalog ``FKBusinessKitIcon`` defaults, or override with ``FKCommentActionBarConfiguration/likeImage`` / ``likedImage`` / ``replyImage`` / ``moreImage`` (SVG/PNG/`UIImage`).
 - Compact reply title: ``FKCommentActionBarConfiguration/showsReplyTitle`` + ``FKCommentKitStrings/reply``; like count via ``showsLikeCount``.
 - More menu: built-in sheet by default (`showsCopyAction` / `showsReportAction` / deletable). Set ``presentsDefaultMoreMenu`` to `false` and implement ``didTapMore`` for a fully custom menu; or append ``additionalMoreActions`` / ``additionalMoreActionsProvider`` and handle ``didSelectCustomMoreAction``.

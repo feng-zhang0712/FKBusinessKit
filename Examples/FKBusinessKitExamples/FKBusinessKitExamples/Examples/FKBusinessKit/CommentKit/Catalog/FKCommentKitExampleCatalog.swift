@@ -29,7 +29,7 @@ enum FKCommentKitExampleCatalog {
         ),
         FKCommentKitExampleListRow(
           title: "Compact",
-          subtitle: "Denser social-style row: meta time · Reply · like, capsule composer.",
+          subtitle: "Denser social-style row: author + trailing time, meta like · Reply · more, capsule composer.",
           makeViewController: {
             FKCommentKitGroupedListHubViewController(
               title: "Compact",

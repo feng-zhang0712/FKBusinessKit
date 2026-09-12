@@ -3,6 +3,9 @@ import Foundation
 /// Applies optimistic like toggles and supports rollback after a failed network call.
 public struct FKCommentLikeOptimisticController: Sendable {
   /// Returns a copy of `item` with like state toggled and count adjusted.
+  ///
+  /// Clears ``FKCommentItem/likeCountText`` so compact chrome falls back to formatting ``likeCount``
+  /// instead of keeping a stale display override (e.g. `"14k"`).
   public static func toggled(_ item: FKCommentItem) -> FKCommentItem {
     var next = item
     if next.isLiked {
@@ -12,6 +15,7 @@ public struct FKCommentLikeOptimisticController: Sendable {
       next.isLiked = true
       next.likeCount += 1
     }
+    next.likeCountText = nil
     return next
   }
 
@@ -19,11 +23,13 @@ public struct FKCommentLikeOptimisticController: Sendable {
   public static func rolledBack(
     _ item: FKCommentItem,
     previousIsLiked: Bool,
-    previousLikeCount: Int
+    previousLikeCount: Int,
+    previousLikeCountText: String? = nil
   ) -> FKCommentItem {
     var next = item
     next.isLiked = previousIsLiked
     next.likeCount = max(0, previousLikeCount)
+    next.likeCountText = previousLikeCountText
     return next
   }
 
