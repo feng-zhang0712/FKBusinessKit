@@ -4,6 +4,30 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-12
+
+### Added
+
+- **CommentKit** — reusable comment list UI kit ([component README](Sources/FKBusinessKit/Components/CommentKit/README.md), [design guide](docs/FKCommentKit_DESIGN.md)):
+  - Flat `replyTo` threads with expand/collapse, like / reply / more actions, and bottom composer (no networking; protocol-injected data).
+  - Layout presets: ``standard`` (``FKCommentRowCell``) and ``compact`` (``FKCommentCompactRowCell`` + capsule composer).
+  - ``FKCommentListViewController``, ``FKCommentListDataSource`` / ``FKCommentListDelegate``, optimistic like helper, ListKit registration.
+  - Configuration tokens for strings, action visibility, theming, keyboard-aligned reply targeting, and custom more-menu actions.
+  - ``didCollapseRepliesFor`` distinct from expand; ``loadingReplies`` VoiceOver label while replies load.
+- **FKBusinessKitIcons** / `Assets.xcassets` — shared template icons (`fk_*`) for CommentKit chrome.
+- **FKBusinessKitExamples** — CommentKit catalog (layout presets, core flows, interactions, configuration, building blocks / ListKit).
+
+### Changed
+
+- Raise minimum FKKit dependency to `0.78.2` (`Package.swift`, `FKBusinessKit.podspec`, README) for Keyboard (`FKKeyboardFocusScroller`) and related APIs.
+- Package ships CommentKit resource bundle (`Assets.xcassets`) via SPM `resources` and CocoaPods `resource_bundles`.
+
+### Fixed
+
+- **CommentKit** — avoid double ``beginReply`` when row content tap also fires ``didSelectRowAt``.
+- **CommentKit** — preserve first ``likeCountText`` snapshot across rapid optimistic like re-taps; clear pending like/expand state on ``reloadComments``.
+- **CommentKit** — compact author ▸ reply-to name font sizes match (``subheadline``).
+
 ## [0.9.0] - 2026-06-30
 
 ### Added
@@ -187,6 +211,7 @@ Tabs that use ``FKTabBarFilterTabPanelContent/panelKind`` still require a non-`n
 
 - Package scope is **new business/composite components** on FKKit. Legacy **BusinessKit** infrastructure (`FKBusinessKit.shared`, version, track, i18n, lifecycle, deeplink, utils) lives in **FKKit** (`FKCoreKit/BusinessKit`) — not in this repository.
 
+[0.10.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.10.0
 [0.9.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.9.0
 [0.8.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.8.0
 [0.7.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.7.0
