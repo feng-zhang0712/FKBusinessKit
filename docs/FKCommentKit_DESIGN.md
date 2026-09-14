@@ -107,6 +107,8 @@ sequenceDiagram
 2. User sends → `DataSource.submit(FKCommentSubmitRequest)`.
 3. On success, App returns the new `FKCommentItem`; kit inserts and clears the reply target.
 4. On failure, kit restores composer text / sending state per configuration.
+5. Blur (keyboard dismiss) clears the reply stripe and visible input by default, while preserving per-target drafts for the next ``beginReply`` / ``beginTopLevelComment``.
+6. Composer visibility follows ``FKCommentComposerPresentationMode`` (`always` / `onDemand` / `automatic`) when ``showsComposer`` is `true`.
 
 ---
 

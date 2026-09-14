@@ -1,12 +1,17 @@
 import UIKit
 
 /// Bottom composer with optional reply-target banner, text input, and send control.
+///
+/// Supports per-target drafts, blur reset, and presentation hints for
+/// ``FKCommentListViewController`` via ``FKCommentComposerConfiguration/presentationMode``.
 @MainActor
 public final class FKCommentComposerView: UIView, UITextViewDelegate {
   /// Fired when the user taps Send with non-empty trimmed text.
   public var onSend: ((String) -> Void)?
   /// Fired when the user cancels the active reply target.
   public var onCancelReply: (() -> Void)?
+  /// Fired when editing, reply target, text, or draft state may affect host chrome visibility.
+  public var onCompositionStateChange: (() -> Void)?
 
   /// Visual configuration.
   public var configuration: FKCommentComposerConfiguration = .init() {
@@ -20,12 +25,34 @@ public final class FKCommentComposerView: UIView, UITextViewDelegate {
 
   /// Active reply target; banner visibility also depends on ``FKCommentComposerConfiguration/showsReplyTargetBanner``.
   public var replyTarget: FKCommentReplyTarget? {
-    didSet { updateReplyBanner() }
+    didSet {
+      guard !isApplyingInternalMutation else {
+        updateReplyBanner()
+        return
+      }
+      if oldValue?.id != replyTarget?.id {
+        saveDraft(for: oldValue)
+        loadDraft(for: replyTarget)
+      }
+      updateReplyBanner()
+      onCompositionStateChange?()
+    }
   }
 
   /// When `true`, input is disabled and send shows a busy state.
   public var isSending: Bool = false {
     didSet { updateSendingState() }
+  }
+
+  /// Whether the text view is first responder.
+  public private(set) var isEditingText: Bool = false
+
+  /// Draft key used for the most recent blur / retarget (`""` = top-level).
+  public private(set) var lastDraftKey: String = FKCommentComposerView.topLevelDraftKey
+
+  /// Whether any preserved draft has non-empty trimmed text.
+  public var hasPreservedDrafts: Bool {
+    drafts.values.contains { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
   }
 
   private let containerStack = UIStackView()
@@ -41,6 +68,19 @@ public final class FKCommentComposerView: UIView, UITextViewDelegate {
   private var textViewHeightConstraint: NSLayoutConstraint?
   private var capsuleConstraints: [NSLayoutConstraint] = []
 
+  private struct Draft {
+    var text: String
+    var replyTarget: FKCommentReplyTarget?
+  }
+
+  private static let topLevelDraftKey = ""
+  private var drafts: [String: Draft] = [:]
+  private var isApplyingInternalMutation = false
+  /// Prevents double chrome reset across willChangeFrame / willHide / didHide.
+  private var didResetChromeForCurrentKeyboardDismiss = false
+  private var isKeyboardVisible = false
+  private var keyboardObservationTokens: [NSObjectProtocol] = []
+
   public override init(frame: CGRect) {
     super.init(frame: frame)
     setup()
@@ -49,6 +89,18 @@ public final class FKCommentComposerView: UIView, UITextViewDelegate {
   public required init?(coder: NSCoder) {
     super.init(coder: coder)
     setup()
+  }
+
+  public override func willMove(toWindow newWindow: UIWindow?) {
+    super.willMove(toWindow: newWindow)
+    if newWindow == nil {
+      removeKeyboardObservers()
+      if configuration.clearsCompositionOnBlur, needsBlurChromeReset {
+        resetBlurChrome(duration: nil, curveRaw: nil)
+      }
+    } else {
+      installKeyboardObserversIfNeeded()
+    }
   }
 
   /// Current trimmed text.
@@ -70,17 +122,61 @@ public final class FKCommentComposerView: UIView, UITextViewDelegate {
     textView.resignFirstResponder()
   }
 
-  /// Clears the text field and sending flag without removing the reply target.
+  /// Starts or retargets composition, restoring any preserved draft for `target`.
+  public func beginComposition(replyingTo target: FKCommentReplyTarget?) {
+    didResetChromeForCurrentKeyboardDismiss = false
+    if replyTarget?.id != target?.id {
+      saveDraft(for: replyTarget)
+      applyReplyTarget(target, loadDraft: true, bannerAnimated: true)
+    } else if text.isEmpty {
+      loadDraft(for: target)
+    }
+    // Notify host first so on-demand chrome can unhide before becoming first responder.
+    onCompositionStateChange?()
+    focus()
+  }
+
+  /// Clears the text field and sending flag without removing the reply target or drafts.
   public func resetText() {
     textView.text = ""
     isSending = false
     textViewDidChange(textView)
   }
 
-  /// Clears text and reply target.
+  /// Clears text and reply target without discarding preserved drafts.
   public func resetAll() {
-    replyTarget = nil
+    didResetChromeForCurrentKeyboardDismiss = false
+    applyReplyTarget(nil, loadDraft: false, bannerAnimated: true)
     resetText()
+    onCompositionStateChange?()
+  }
+
+  /// Discards the draft for `key` (`""` = top-level) and clears UI when it matches the active target.
+  public func discardDraft(forKey key: String) {
+    drafts.removeValue(forKey: key)
+    if draftKey(for: replyTarget) == key {
+      resetText()
+    }
+    onCompositionStateChange?()
+  }
+
+  /// Discards every preserved draft.
+  public func discardAllDrafts() {
+    drafts.removeAll(keepingCapacity: false)
+    onCompositionStateChange?()
+  }
+
+  /// Whether list hosts should keep the composer chrome visible for `presentationMode`.
+  public func shouldDisplayChrome(showsComposer: Bool) -> Bool {
+    guard showsComposer else { return false }
+    switch configuration.presentationMode {
+    case .always:
+      return true
+    case .onDemand:
+      return isEditingText || replyTarget != nil
+    case .automatic:
+      return isEditingText || replyTarget != nil || !text.isEmpty || hasPreservedDrafts
+    }
   }
 
   private func setup() {
@@ -225,6 +321,7 @@ public final class FKCommentComposerView: UIView, UITextViewDelegate {
     sendButton.isHidden = !configuration.showsSendButton
     updateReplyBanner()
     invalidateIntrinsicContentSize()
+    onCompositionStateChange?()
   }
 
   private func applyStrings() {
@@ -234,15 +331,34 @@ public final class FKCommentComposerView: UIView, UITextViewDelegate {
     updateReplyBanner()
   }
 
-  private func updateReplyBanner() {
+  private func updateReplyBanner(animated: Bool = false) {
     let shouldShow = configuration.showsReplyTargetBanner && replyTarget != nil
-    bannerStack.isHidden = !shouldShow
+    let visibilityChanged = bannerStack.isHidden == shouldShow
+    cancelReplyButton.isHidden = !configuration.showsCancelReplyButton
     if let replyTarget, shouldShow {
       bannerLabel.text = strings.replyToText(displayName: replyTarget.displayName)
     } else {
       bannerLabel.text = nil
     }
-    invalidateIntrinsicContentSize()
+
+    let applyVisibility = {
+      self.bannerStack.isHidden = !shouldShow
+      self.invalidateIntrinsicContentSize()
+      self.superview?.setNeedsLayout()
+      self.superview?.layoutIfNeeded()
+    }
+
+    if animated, visibilityChanged, window != nil {
+      UIView.animate(
+        withDuration: 0.22,
+        delay: 0,
+        options: [.curveEaseInOut, .beginFromCurrentState, .allowUserInteraction]
+      ) {
+        applyVisibility()
+      }
+    } else {
+      applyVisibility()
+    }
   }
 
   private func updateSendingState() {
@@ -253,10 +369,40 @@ public final class FKCommentComposerView: UIView, UITextViewDelegate {
     alpha = isSending ? 0.7 : 1.0
   }
 
+  public func textViewDidBeginEditing(_ textView: UITextView) {
+    isEditingText = true
+    didResetChromeForCurrentKeyboardDismiss = false
+    if text.isEmpty,
+      configuration.preservesDrafts,
+      let draft = drafts[lastDraftKey],
+      !draft.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    {
+      applyReplyTarget(draft.replyTarget, loadDraft: true, bannerAnimated: true)
+    }
+    onCompositionStateChange?()
+  }
+
+  public func textViewDidEndEditing(_ textView: UITextView) {
+    isEditingText = false
+    guard configuration.clearsCompositionOnBlur else {
+      onCompositionStateChange?()
+      return
+    }
+    // Always stash draft here. Chrome reset is driven by keyboard will-hide so stripe
+    // collapses in the same animation as the keyboard — not after it finishes.
+    lastDraftKey = draftKey(for: replyTarget)
+    saveDraft(for: replyTarget)
+    if !isKeyboardVisible, needsBlurChromeReset {
+      resetBlurChrome(duration: nil, curveRaw: nil)
+    }
+    onCompositionStateChange?()
+  }
+
   public func textViewDidChange(_ textView: UITextView) {
     if let max = configuration.maxCharacterCount, (textView.text?.count ?? 0) > max {
       textView.text = String(textView.text.prefix(max))
     }
+    let wasEmpty = placeholderLabel.isHidden == false
     placeholderLabel.isHidden = !(textView.text ?? "").isEmpty
     let canSend = !isSending && !text.isEmpty
     sendButton.isEnabled = canSend
@@ -264,6 +410,174 @@ public final class FKCommentComposerView: UIView, UITextViewDelegate {
     updateTextViewHeight()
     invalidateIntrinsicContentSize()
     superview?.setNeedsLayout()
+    let isEmpty = text.isEmpty
+    if wasEmpty != isEmpty {
+      onCompositionStateChange?()
+    }
+  }
+
+  private var needsBlurChromeReset: Bool {
+    if replyTarget != nil { return true }
+    if configuration.presentationMode == .automatic { return false }
+    return !text.isEmpty
+  }
+
+  private var shouldKeepVisibleTextOnBlur: Bool {
+    configuration.presentationMode == .automatic && !text.isEmpty
+  }
+
+  private func resetBlurChrome(duration: Double?, curveRaw: UInt?) {
+    guard needsBlurChromeReset else { return }
+    guard !didResetChromeForCurrentKeyboardDismiss else { return }
+    didResetChromeForCurrentKeyboardDismiss = true
+
+    lastDraftKey = draftKey(for: replyTarget)
+    saveDraft(for: replyTarget)
+    let keepVisibleText = shouldKeepVisibleTextOnBlur
+
+    let apply = {
+      self.applyReplyTarget(nil, loadDraft: false, bannerAnimated: false)
+      if !keepVisibleText {
+        self.textView.text = ""
+        self.textViewDidChange(self.textView)
+      } else {
+        self.updateReplyBanner(animated: false)
+      }
+      self.invalidateIntrinsicContentSize()
+      self.superview?.setNeedsLayout()
+      self.superview?.layoutIfNeeded()
+    }
+
+    if let duration, duration > 0.01 {
+      let resolvedCurve = curveRaw ?? UInt(UIView.AnimationCurve.easeInOut.rawValue)
+      var options = UIView.AnimationOptions(rawValue: resolvedCurve << 16)
+      options.insert(.beginFromCurrentState)
+      options.insert(.allowUserInteraction)
+      UIView.animate(withDuration: duration, delay: 0, options: options, animations: apply)
+    } else {
+      apply()
+    }
+    onCompositionStateChange?()
+  }
+
+  private func handleKeyboardFrameChange(
+    endFrameInScreen: CGRect,
+    duration: Double?,
+    curveRaw: UInt?,
+    isWillHide: Bool
+  ) {
+    let screenBounds = UIScreen.main.bounds
+    let visibleHeight = screenBounds.intersection(endFrameInScreen).height
+    let keyboardAppearsVisible = visibleHeight > 1
+    let wasVisible = isKeyboardVisible
+    isKeyboardVisible = keyboardAppearsVisible
+
+    if keyboardAppearsVisible {
+      // New keyboard presentation cycle.
+      if !wasVisible {
+        didResetChromeForCurrentKeyboardDismiss = false
+      }
+      return
+    }
+
+    // Keyboard is dismissing / hidden — collapse stripe in this same animation turn.
+    guard configuration.clearsCompositionOnBlur else { return }
+    guard isWillHide || wasVisible else { return }
+    resetBlurChrome(duration: duration, curveRaw: curveRaw)
+  }
+
+  private func installKeyboardObserversIfNeeded() {
+    guard keyboardObservationTokens.isEmpty else { return }
+    let center = NotificationCenter.default
+    keyboardObservationTokens.append(
+      center.addObserver(
+        forName: UIResponder.keyboardWillChangeFrameNotification,
+        object: nil,
+        queue: .main
+      ) { [weak self] notification in
+        let endFrame =
+          (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect) ?? .zero
+        let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+        let curveRaw = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt
+        MainActor.assumeIsolated {
+          self?.handleKeyboardFrameChange(
+            endFrameInScreen: endFrame,
+            duration: duration,
+            curveRaw: curveRaw,
+            isWillHide: false
+          )
+        }
+      }
+    )
+    keyboardObservationTokens.append(
+      center.addObserver(
+        forName: UIResponder.keyboardWillHideNotification,
+        object: nil,
+        queue: .main
+      ) { [weak self] notification in
+        let endFrame =
+          (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect) ?? .zero
+        let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+        let curveRaw = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt
+        MainActor.assumeIsolated {
+          self?.handleKeyboardFrameChange(
+            endFrameInScreen: endFrame,
+            duration: duration,
+            curveRaw: curveRaw,
+            isWillHide: true
+          )
+        }
+      }
+    )
+  }
+
+  private func removeKeyboardObservers() {
+    for token in keyboardObservationTokens {
+      NotificationCenter.default.removeObserver(token)
+    }
+    keyboardObservationTokens.removeAll(keepingCapacity: false)
+  }
+
+  private func applyReplyTarget(
+    _ target: FKCommentReplyTarget?,
+    loadDraft: Bool,
+    bannerAnimated: Bool = false
+  ) {
+    isApplyingInternalMutation = true
+    replyTarget = target
+    isApplyingInternalMutation = false
+    if loadDraft {
+      self.loadDraft(for: target)
+    }
+    updateReplyBanner(animated: bannerAnimated)
+  }
+
+  private func draftKey(for target: FKCommentReplyTarget?) -> String {
+    target?.id ?? Self.topLevelDraftKey
+  }
+
+  private func saveDraft(for target: FKCommentReplyTarget?) {
+    guard configuration.preservesDrafts else { return }
+    let key = draftKey(for: target)
+    let value = textView.text ?? ""
+    let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.isEmpty {
+      drafts.removeValue(forKey: key)
+    } else {
+      drafts[key] = Draft(text: value, replyTarget: target)
+    }
+    lastDraftKey = key
+  }
+
+  private func loadDraft(for target: FKCommentReplyTarget?) {
+    guard configuration.preservesDrafts else { return }
+    let key = draftKey(for: target)
+    if let draft = drafts[key] {
+      textView.text = draft.text
+    } else {
+      textView.text = ""
+    }
+    textViewDidChange(textView)
   }
 
   private func updateTextViewHeight() {
@@ -297,7 +611,12 @@ public final class FKCommentComposerView: UIView, UITextViewDelegate {
   }
 
   @objc private func handleCancelReply() {
-    replyTarget = nil
+    didResetChromeForCurrentKeyboardDismiss = false
+    saveDraft(for: replyTarget)
+    lastDraftKey = draftKey(for: replyTarget)
+    applyReplyTarget(nil, loadDraft: false, bannerAnimated: true)
+    resetText()
     onCancelReply?()
+    onCompositionStateChange?()
   }
 }

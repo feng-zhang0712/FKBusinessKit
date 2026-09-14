@@ -6,7 +6,7 @@ import FKUIKit
 ///
 /// Wire ``commentDataSource`` and optionally ``commentDelegate``. The controller never performs networking itself.
 @MainActor
-open class FKCommentListViewController: FKBaseTableViewController, UITableViewDataSource, UITableViewDelegate {
+open class FKCommentListViewController: FKBaseTableViewController, UITableViewDataSource, UITableViewDelegate, UIGestureRecognizerDelegate {
   /// App-provided data operations.
   public weak var commentDataSource: FKCommentListDataSource?
   /// App-provided interaction callbacks.
@@ -40,6 +40,12 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
   /// Runs after ``FKKeyboardFocusScroller`` on keyboard frame changes to pin row→composer
   /// (corrects load-more `contentInset.bottom` baked into older Keyboard geometry).
   private var replyKeyboardPinObservation: NSObjectProtocol?
+  private lazy var backgroundKeyboardDismissTap: UITapGestureRecognizer = {
+    let gesture = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundKeyboardDismissTap))
+    gesture.cancelsTouchesInView = false
+    gesture.delegate = self
+    return gesture
+  }()
 
   public override init(style: UITableView.Style = .plain) {
     super.init(style: style)
@@ -53,7 +59,8 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
 
   open override func setupUI() {
     super.setupUI()
-    // Keep the keyboard up so tapping another row can switch the reply target.
+    // Base tap-to-dismiss would also fire on row content and race with beginReply/focus.
+    // CommentKit owns background-tap dismiss via ``dismissesKeyboardOnBackgroundTap``.
     dismissKeyboardOnTapEnabled = false
     tableView.dataSource = self
     tableView.delegate = self
@@ -72,8 +79,11 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
       self?.handleSend(text: text)
     }
     composerView.onCancelReply = { [weak self] in
-      self?.composerView.replyTarget = nil
       self?.replyKeyboardFocusScroller?.clearAlignmentTarget()
+      self?.updateComposerChromeVisibility()
+    }
+    composerView.onCompositionStateChange = { [weak self] in
+      self?.updateComposerChromeVisibility()
     }
 
     applyCommentConfiguration()
@@ -257,7 +267,8 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
 
   /// Sets the composer reply target and focuses input.
   ///
-  /// When ``FKCommentKitConfiguration/alignsReplyTargetToKeyboard`` is `true` (default), uses
+  /// Restores any preserved draft for this comment id. When
+  /// ``FKCommentKitConfiguration/alignsReplyTargetToKeyboard`` is `true` (default), uses
   /// FKUIKit ``FKKeyboardFocusScroller/alignContentRect(_:toKeyboardUsing:additionalBottomInset:)``
   /// so the target row’s bottom meets the composer top (Keyboard “Align cell to keyboard”).
   public func beginReply(to item: FKCommentItem) {
@@ -265,20 +276,32 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
       commentDelegate?.commentList(self, didTapReply: item)
       return
     }
-    let wasEditing = isComposerEditing
-    composerView.replyTarget = FKCommentReplyTarget(id: item.id, displayName: item.authorName)
+    // Capture before `beginComposition` → `focus()`; once focused, `isComposerEditing` is true
+    // even while the keyboard is still rising.
+    let keyboardAlreadyVisible = isComposerEditing
+    let target = FKCommentReplyTarget(id: item.id, displayName: item.authorName)
+    composerView.beginComposition(replyingTo: target)
+    updateComposerChromeVisibility()
     view.layoutIfNeeded()
     if commentConfiguration.alignsReplyTargetToKeyboard {
-      alignReplyTargetRowToKeyboard(commentId: item.id)
-    } else if !wasEditing {
+      alignReplyTargetRowToKeyboard(
+        commentId: item.id,
+        pinImmediately: keyboardAlreadyVisible
+      )
+    } else if !keyboardAlreadyVisible {
       scrollToComment(id: item.id, at: .bottom, animated: true, highlight: false)
     }
-    if !wasEditing {
-      DispatchQueue.main.async { [weak self] in
-        self?.composerView.focus()
-      }
-    }
     commentDelegate?.commentList(self, didTapReply: item)
+  }
+
+  /// Presents the composer for a top-level comment (no reply target), restoring any top-level draft.
+  ///
+  /// Useful when ``FKCommentComposerPresentationMode/onDemand`` or ``automatic`` hides the bar until
+  /// composition starts.
+  public func beginTopLevelComment() {
+    guard commentConfiguration.showsComposer else { return }
+    composerView.beginComposition(replyingTo: nil)
+    updateComposerChromeVisibility()
   }
 
   /// Scrolls so the comment with `id` is visible.
@@ -470,8 +493,6 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
     isLoadMoreEnabled = commentConfiguration.isLoadMoreEnabled
     composerView.configuration = commentConfiguration.composer
     composerView.strings = commentConfiguration.strings
-    composerView.isHidden = !commentConfiguration.showsComposer
-    composerView.isUserInteractionEnabled = commentConfiguration.showsComposer
     switch commentConfiguration.layoutPreset {
     case .compact:
       tableView.separatorStyle = .none
@@ -484,21 +505,78 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
       tableView.rowHeight = UITableView.automaticDimension
       tableView.separatorInset = UIEdgeInsets(top: 0, left: 56, bottom: 0, right: 0)
     }
-    applyComposerVisibilityConstraints()
+    updateComposerChromeVisibility()
+    syncBackgroundKeyboardDismissTap()
     syncReplyKeyboardFocusScroller(startIfNeeded: isViewAppeared)
     tableView.reloadData()
   }
 
+  private func syncBackgroundKeyboardDismissTap() {
+    let enabled =
+      commentConfiguration.dismissesKeyboardOnBackgroundTap && commentConfiguration.showsComposer
+    if enabled {
+      if backgroundKeyboardDismissTap.view == nil {
+        view.addGestureRecognizer(backgroundKeyboardDismissTap)
+      }
+    } else if backgroundKeyboardDismissTap.view != nil {
+      view.removeGestureRecognizer(backgroundKeyboardDismissTap)
+    }
+  }
+
+  @objc private func handleBackgroundKeyboardDismissTap() {
+    view.endEditing(true)
+  }
+
+  public func gestureRecognizer(
+    _ gestureRecognizer: UIGestureRecognizer,
+    shouldReceive touch: UITouch
+  ) -> Bool {
+    guard gestureRecognizer === backgroundKeyboardDismissTap else { return true }
+    var view = touch.view
+    while let current = view {
+      if current is UIControl { return false }
+      if current is UITextView || current is UITextField { return false }
+      // Row content tap begins a reply — do not race endEditing against beginReply/focus.
+      if commentConfiguration.beginsReplyOnRowTap,
+        current is FKCommentRowCell || current is FKCommentCompactRowCell
+      {
+        return false
+      }
+      view = current.superview
+    }
+    return true
+  }
+
+  private func updateComposerChromeVisibility() {
+    let shows = composerView.shouldDisplayChrome(showsComposer: commentConfiguration.showsComposer)
+    let wasHidden = composerView.isHidden
+    composerView.isHidden = !shows
+    composerView.isUserInteractionEnabled = shows
+    applyComposerVisibilityConstraints(composerVisible: shows)
+    if wasHidden != composerView.isHidden {
+      view.setNeedsLayout()
+      view.layoutIfNeeded()
+      syncReplyKeyboardFocusScroller(startIfNeeded: isViewAppeared)
+    }
+  }
+
+  private func applyComposerVisibilityConstraints(composerVisible: Bool) {
+    tableBottomToComposerConstraint?.isActive = composerVisible
+    tableBottomToKeyboardConstraint?.isActive = !composerVisible
+  }
+
   private func applyComposerVisibilityConstraints() {
-    let showsComposer = commentConfiguration.showsComposer
-    tableBottomToComposerConstraint?.isActive = showsComposer
-    tableBottomToKeyboardConstraint?.isActive = !showsComposer
+    let shows = composerView.shouldDisplayChrome(showsComposer: commentConfiguration.showsComposer)
+    applyComposerVisibilityConstraints(composerVisible: shows)
   }
 
   /// Mirrors FKUIKit Keyboard “Align cell to keyboard” example.
   private func syncReplyKeyboardFocusScroller(startIfNeeded: Bool) {
+    let composerVisible = composerView.shouldDisplayChrome(
+      showsComposer: commentConfiguration.showsComposer
+    )
     let shouldUse =
-      commentConfiguration.alignsReplyTargetToKeyboard && commentConfiguration.showsComposer
+      commentConfiguration.alignsReplyTargetToKeyboard && composerVisible
     guard shouldUse else {
       removeReplyKeyboardPinCorrection()
       replyKeyboardFocusScroller?.stop()
@@ -525,20 +603,24 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
     installReplyKeyboardPinCorrectionIfNeeded()
   }
 
-  private func alignReplyTargetRowToKeyboard(commentId: String) {
+  private func alignReplyTargetRowToKeyboard(commentId: String, pinImmediately: Bool) {
     syncReplyKeyboardFocusScroller(startIfNeeded: isViewAppeared)
     guard let index = comments.firstIndex(where: { $0.id == commentId }) else { return }
     // Banner / indent layout must be settled before `rectForRow` (critical for nested replies).
     view.layoutIfNeeded()
     tableView.layoutIfNeeded()
     let rowRect = tableView.rectForRow(at: IndexPath(row: index, section: 0))
+    // Stores the rect; when the keyboard is not visible yet, scrolling waits for the keyboard
+    // frame update and runs alongside it (see FKKeyboardFocusScroller.alignContentRect).
     replyKeyboardFocusScroller?.alignContentRect(
       rowRect,
       toKeyboardUsing: nil,
       additionalBottomInset: 0
     )
-    // When the keyboard is already visible, also pin immediately (nested reply / retarget).
-    if isComposerEditing {
+    // Pin only when the keyboard is already up (retarget while composing). Pinning before the
+    // keyboard appears places the row against the full-screen composer top; the later
+    // keyboard-driven alignment then scrolls again → visible jump down, then up.
+    if pinImmediately {
       pinRowBottomToComposerTop(rowRect: rowRect)
     }
   }
@@ -615,9 +697,12 @@ open class FKCommentListViewController: FKBaseTableViewController, UITableViewDa
       self.composerView.isSending = false
       switch result {
       case .success(let item):
+        let draftKey = request.replyToCommentId ?? ""
+        self.composerView.discardDraft(forKey: draftKey)
         self.comments = FKCommentListMutation.insertingSubmitted(item, into: self.comments)
         self.composerView.resetAll()
         self.replyKeyboardFocusScroller?.clearAlignmentTarget()
+        self.updateComposerChromeVisibility()
         self.tableView.reloadData()
         self.syncListPresentationAfterMutation()
         self.scrollToComment(id: item.id, animated: true, highlight: false)

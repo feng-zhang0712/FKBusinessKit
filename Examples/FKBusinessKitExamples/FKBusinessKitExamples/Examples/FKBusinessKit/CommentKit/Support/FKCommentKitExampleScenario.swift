@@ -17,6 +17,7 @@ enum FKCommentKitExampleScenario: CaseIterable {
   case hiddenActions
   case expandableBody
   case composerLimits
+  case composerPresentation
   case updateRemoveAPI
   case customAppearance
   case listKitRow
@@ -45,6 +46,7 @@ enum FKCommentKitExampleScenario: CaseIterable {
     case .hiddenActions: return "Hidden row actions"
     case .expandableBody: return "Expandable body"
     case .composerLimits: return "Composer limits"
+    case .composerPresentation: return "Composer presentation & drafts"
     case .updateRemoveAPI: return "updateComment / removeComment"
     case .customAppearance: return "Custom strings & chrome"
     case .listKitRow: return "ListKit row registration"
@@ -89,6 +91,8 @@ enum FKCommentKitExampleScenario: CaseIterable {
       return "Long body with FKExpandableText and row height updates."
     case .composerLimits:
       return "maxCharacterCount and maxContentHeight scrolling."
+    case .composerPresentation:
+      return "automatic presentation, blur reset, per-target draft restore; toolbar starts top-level."
     case .updateRemoveAPI:
       return "Toolbar mutates first row via updateComment and removeComment."
     case .customAppearance:

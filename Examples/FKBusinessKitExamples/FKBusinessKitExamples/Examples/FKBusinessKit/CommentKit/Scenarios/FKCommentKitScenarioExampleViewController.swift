@@ -28,6 +28,13 @@ final class FKCommentKitScenarioExampleViewController: FKCommentListViewControll
         UIBarButtonItem(title: "Update", style: .plain, target: self, action: #selector(handleUpdateFirst)),
         UIBarButtonItem(title: "Remove", style: .plain, target: self, action: #selector(handleRemoveFirst)),
       ]
+    } else if scenario == .composerPresentation {
+      navigationItem.rightBarButtonItem = UIBarButtonItem(
+        title: "Comment",
+        style: .plain,
+        target: self,
+        action: #selector(handleBeginTopLevelComment)
+      )
     }
   }
 
@@ -120,6 +127,12 @@ final class FKCommentKitScenarioExampleViewController: FKCommentListViewControll
       configuration.composer.maxCharacterCount = 80
       configuration.composer.maxContentHeight = 72
       configuration.strings.composerPlaceholder = "Max 80 characters…"
+    case .composerPresentation:
+      configuration.composer.presentationMode = .automatic
+      configuration.composer.clearsCompositionOnBlur = true
+      configuration.composer.preservesDrafts = true
+      configuration.composer.showsReplyTargetBanner = true
+      configuration.strings.composerPlaceholder = "Reply, blur to stash draft, reply again to restore…"
     case .customAppearance:
       configuration.strings = FKCommentKitStrings(
         like: "Love",
@@ -168,6 +181,11 @@ final class FKCommentKitScenarioExampleViewController: FKCommentListViewControll
     }
     removeComment(id: first.id)
     showToast("removeComment(\(first.id))")
+  }
+
+  @objc private func handleBeginTopLevelComment() {
+    beginTopLevelComment()
+    showToast("beginTopLevelComment()")
   }
 }
 

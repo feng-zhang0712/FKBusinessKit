@@ -104,6 +104,7 @@ enum FKCommentKitExampleCatalog {
         row(.hiddenActions),
         row(.expandableBody),
         row(.composerLimits),
+        row(.composerPresentation),
         row(.customAppearance),
       ]
     )

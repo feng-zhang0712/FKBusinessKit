@@ -97,6 +97,11 @@ public struct FKCommentKitConfiguration: Equatable {
   public var showsComposer: Bool
   /// When `true`, tapping a comment row (outside like / reply / more / author / expand controls) begins a reply.
   public var beginsReplyOnRowTap: Bool
+  /// When `true` (default), tapping empty areas (table background / non-reply row chrome) dismisses the keyboard.
+  ///
+  /// When ``beginsReplyOnRowTap`` is `true`, taps that begin a reply do **not** dismiss — they retarget /
+  /// focus the composer instead. Set `false` to keep the keyboard up until Send / Cancel / system dismiss.
+  public var dismissesKeyboardOnBackgroundTap: Bool
   /// When `true` (default), beginning a reply uses FKUIKit ``FKKeyboardFocusScroller`` /
   /// `alignContentRect` so the target row’s bottom meets the composer top (Keyboard “Align cell
   /// to keyboard”). Set `false` for plain ``UITableView/scrollToRow``.
@@ -124,6 +129,7 @@ public struct FKCommentKitConfiguration: Equatable {
     additionalMoreActions: [FKCommentCustomMoreAction] = [],
     showsComposer: Bool = true,
     beginsReplyOnRowTap: Bool = true,
+    dismissesKeyboardOnBackgroundTap: Bool = true,
     alignsReplyTargetToKeyboard: Bool = true,
     isPullToRefreshEnabled: Bool = true,
     isLoadMoreEnabled: Bool = true,
@@ -144,6 +150,7 @@ public struct FKCommentKitConfiguration: Equatable {
     self.additionalMoreActions = additionalMoreActions
     self.showsComposer = showsComposer
     self.beginsReplyOnRowTap = beginsReplyOnRowTap
+    self.dismissesKeyboardOnBackgroundTap = dismissesKeyboardOnBackgroundTap
     self.alignsReplyTargetToKeyboard = alignsReplyTargetToKeyboard
     self.isPullToRefreshEnabled = isPullToRefreshEnabled
     self.isLoadMoreEnabled = isLoadMoreEnabled
@@ -466,6 +473,19 @@ public struct FKCommentActionBarConfiguration: Equatable {
   }
 }
 
+/// When the composer chrome is visible inside ``FKCommentListViewController``.
+///
+/// ``FKCommentKitConfiguration/showsComposer`` remains the master switch for read-only lists.
+public enum FKCommentComposerPresentationMode: String, Equatable, Sendable, CaseIterable {
+  /// Composer bar stays visible whenever the list shows a composer.
+  case always
+  /// Shown while composing (focused or active reply target); hidden after blur reset.
+  case onDemand
+  /// Like ``onDemand``, but stays visible after blur when text or preserved drafts remain so the
+  /// user can resume; hides when idle with no drafts.
+  case automatic
+}
+
 /// Appearance for ``FKCommentComposerView``.
 public struct FKCommentComposerConfiguration: Equatable {
   public var maxCharacterCount: Int?
@@ -506,6 +526,18 @@ public struct FKCommentComposerConfiguration: Equatable {
   public var showsSendButton: Bool
   /// When `true` (default), shows the reply-target stripe (author name + Cancel) above the input.
   public var showsReplyTargetBanner: Bool
+  /// When `true` (default), shows Cancel on the reply-target stripe.
+  public var showsCancelReplyButton: Bool
+  /// Controls when the composer chrome stays visible in ``FKCommentListViewController``.
+  ///
+  /// Ignored when ``FKCommentKitConfiguration/showsComposer`` is `false` (read-only lists).
+  public var presentationMode: FKCommentComposerPresentationMode
+  /// When `true` (default), resigning first responder clears the reply stripe and visible text
+  /// (see ``presentationMode`` for automatic text retention) while optionally preserving drafts.
+  public var clearsCompositionOnBlur: Bool
+  /// When `true` (default), non-empty input is stored per reply target (and top-level) on blur /
+  /// retarget and restored the next time that target is composed.
+  public var preservesDrafts: Bool
 
   public init(
     maxCharacterCount: Int? = 2000,
@@ -533,7 +565,11 @@ public struct FKCommentComposerConfiguration: Equatable {
     capsuleBackgroundColor: UIColor = UIColor(white: 0.96, alpha: 1),
     capsuleCornerRadius: CGFloat = 18,
     showsSendButton: Bool = true,
-    showsReplyTargetBanner: Bool = true
+    showsReplyTargetBanner: Bool = true,
+    showsCancelReplyButton: Bool = true,
+    presentationMode: FKCommentComposerPresentationMode = .always,
+    clearsCompositionOnBlur: Bool = true,
+    preservesDrafts: Bool = true
   ) {
     self.maxCharacterCount = maxCharacterCount.map { max(1, $0) }
     self.maxContentHeight = max(36, maxContentHeight)
@@ -561,6 +597,10 @@ public struct FKCommentComposerConfiguration: Equatable {
     self.capsuleCornerRadius = max(0, capsuleCornerRadius)
     self.showsSendButton = showsSendButton
     self.showsReplyTargetBanner = showsReplyTargetBanner
+    self.showsCancelReplyButton = showsCancelReplyButton
+    self.presentationMode = presentationMode
+    self.clearsCompositionOnBlur = clearsCompositionOnBlur
+    self.preservesDrafts = preservesDrafts
   }
 
   /// Dynamic Type font for the text view / placeholder.
