@@ -4,6 +4,20 @@ This file follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-09-14
+
+### Added
+
+- **CommentKit** — ``FKCommentComposerPresentationMode`` (`always` / `onDemand` / `automatic`) for list composer chrome visibility.
+- **CommentKit** — per-reply-target draft preserve/restore on blur (`preservesDrafts`, `clearsCompositionOnBlur`) with ``beginTopLevelComment()``.
+- **CommentKit** — ``dismissesKeyboardOnBackgroundTap`` (default `true`); background taps dismiss the keyboard without racing row-tap reply.
+- **FKBusinessKitExamples** — Composer presentation & drafts scenario.
+
+### Fixed
+
+- **CommentKit** — sync reply-stripe collapse with keyboard hide duration/curve.
+- **CommentKit** — avoid reply scroll jump by pinning the target row only when the keyboard is already visible.
+
 ## [0.10.0] - 2026-09-12
 
 ### Added
@@ -211,6 +225,7 @@ Tabs that use ``FKTabBarFilterTabPanelContent/panelKind`` still require a non-`n
 
 - Package scope is **new business/composite components** on FKKit. Legacy **BusinessKit** infrastructure (`FKBusinessKit.shared`, version, track, i18n, lifecycle, deeplink, utils) lives in **FKKit** (`FKCoreKit/BusinessKit`) — not in this repository.
 
+[0.11.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.11.0
 [0.10.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.10.0
 [0.9.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.9.0
 [0.8.0]: https://github.com/feng-zhang0712/FKBusinessKit/releases/tag/0.8.0
